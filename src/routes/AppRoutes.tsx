@@ -6,6 +6,7 @@ import StudentDashboard from '../pages/student/Dashboard';
 import AiAssistant from '../pages/student/AiAssistant';
 import StudentSessions from '../pages/student/Sessions';
 import ReportPage from '../pages/student/Report';
+import StudentSidebar from '../pages/student/Sidebar'
 // Tutor pages
 import TutorSession from '../pages/tutor/Session';
 import Sprint from '../pages/tutor/Sprint';
@@ -26,6 +27,7 @@ const AppRoutes = () => (
       <Route path="/student/ai-assistant" element={<AiAssistant />} />
       <Route path="/student/sessions" element={<StudentSessions />} />
       <Route path="/student/report" element={<ReportPage />} />
+      <Route path="/student/sidebar" element={<StudentSidebar /> } />
 
       {/* Tutor Routes */}
       <Route path="/tutor/session" element={<TutorSession />} />
