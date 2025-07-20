@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiHome, FiUsers, FiShield, FiBookOpen } from 'react-icons/fi';
-import logo from '../../assets/logo.png'; 
+import logo from '../../assets/logo.png';
 
 const SidebarLink = ({ icon: Icon, label, active, collapsed }: any) => (
   <div
@@ -27,6 +28,12 @@ const SidebarLink = ({ icon: Icon, label, active, collapsed }: any) => (
 const AdminSidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [activeLink, setActiveLink] = useState('Admin Dashboard');
+  const navigate = useNavigate();  // React Router navigation
+
+  const handleLogout = () => {
+    // Optional: clear auth tokens/session here
+    navigate('/login');  // Redirect to login page
+  };
 
   const navigationItems = [
     { icon: FiHome, label: 'Admin Dashboard' },
@@ -41,12 +48,10 @@ const AdminSidebar: React.FC = () => {
         collapsed ? 'w-20' : 'w-72'
       } bg-gradient-to-br from-gray-50 via-white to-blue-50 h-screen flex flex-col fixed font-inter shadow-xl shadow-blue-200/20 transition-[width] duration-500 ease-in-out z-40 border-r border-blue-100/60`}
     >
-      {/* Logo and Collapse Button Row */}
       <div className="flex items-center justify-between px-4 py-4">
         {!collapsed && (
           <img src={logo} alt="FOCAS Logo" className="h-10 w-auto" />
         )}
-
         <button
           className={`w-10 h-10 rounded-2xl bg-white shadow-md shadow-blue-200/30 flex items-center justify-center hover:shadow-lg border border-blue-100/40 transition-all duration-300 group ${
             collapsed ? 'mx-auto' : ''
@@ -60,7 +65,6 @@ const AdminSidebar: React.FC = () => {
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-4 py-2">
         <div className="space-y-1">
           {navigationItems.map((item) => (
@@ -80,12 +84,13 @@ const AdminSidebar: React.FC = () => {
         </div>
       </nav>
 
-      {/* Logout */}
+      {/* Logout Button */}
       <div className="p-4">
         <button
+          onClick={handleLogout}
           className={`w-full flex items-center ${
             collapsed ? 'justify-center' : 'gap-3'
-          } px-4 py-4 rounded-3xl text-gray-500 hover:text-red-500 hover:bg-white hover:shadow-md hover:shadow-red-100/50 transition-all duration-300 border border-transparent hover:border-red-100/50`}
+          } px-4 py-4 rounded-2xl cursor-pointer text-gray-500 hover:text-red-500 hover:bg-white hover:shadow-md hover:shadow-red-100/50 transition-all duration-300 border border-transparent hover:border-red-100/50`}
         >
           <FiLogOut size={20} />
           {!collapsed && (
