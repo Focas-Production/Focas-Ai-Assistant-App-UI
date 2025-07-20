@@ -12,11 +12,8 @@ import TutorSession from '../pages/tutor/Session';
 import Sprint from '../pages/tutor/Sprint';
 import TutorStudentDetails from '../pages/tutor/StudentDetails';
 // Admin pages
-import AdminDashboard from '../pages/admin/Dashboard';
-import AdminStudentDetails from '../pages/admin/StudentDetails';
-import AdminDetails from '../pages/admin/AdminDetails';
-import TutorDetails from '../pages/admin/TutorDetails';
 import AdminSidebar from '../pages/admin/AdminSidebar';
+import AdminLayout from '../pages/admin/AdminLayout';
 
 
 const AppRoutes = () => (
@@ -40,10 +37,7 @@ const AppRoutes = () => (
       <Route path="/tutor/student-details" element={<TutorStudentDetails />} />
 
       {/* Admin Routes */}
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/student-details" element={<AdminStudentDetails />} />
-      <Route path="/admin/admin-details" element={<AdminDetails />} />
-      <Route path="/admin/tutor-details" element={<TutorDetails />} />
+      <Route path="/admin" element={<AdminLayout />} />
 
       {/* Dev Comp Routes */}
       <Route path="/dev/admin-sidebar" element={<AdminSidebar />} />
