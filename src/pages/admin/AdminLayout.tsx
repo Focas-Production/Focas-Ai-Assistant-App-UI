@@ -58,7 +58,7 @@ const AdminLayout: React.FC = () => {
         </header>
 
         {/* Main Content */}
-        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md p-6">
+        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md">
           {renderContent()}
         </main>
       </div>
