@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Dashboard from './Dashboard';
+import Dashboard from './AdminDashboard';
 import StudentDetails from './StudentDetails';
 import AdminDetails from './AdminDetails';
 import TutorDetails from './TutorDetails';
