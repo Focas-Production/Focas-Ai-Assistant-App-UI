@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Dashboard from './AdminDashboard';
-import StudentDetails from './AdminStudentDetails';
-import AdminDetails from './AdminDetails';
-import TutorDetails from './AdminTutorDetails';
-import AdminSidebar from './AdminSidebar';
+import TutorSidebar from './TutorSidebar';
+import TutorSession from './TutorSession';
+import Sprint from './TutorSprint';
+import TutorStudentDetails from './TutorStudentDetails';
 
-const AdminLayout: React.FC = () => {
+
+const TutorLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeLink, setActiveLink] = useState('Dashboard');
+  const [activeLink, setActiveLink] = useState('Tutor Sessions');
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -17,23 +17,21 @@ const AdminLayout: React.FC = () => {
 
   const renderContent = () => {
     switch (activeLink) {
-      case 'Dashboard':
-        return <Dashboard />;
+      case 'Tutor Sessions':
+        return <TutorSession />;
+      case 'Sprint':
+        return <Sprint />;
       case 'Students':
-        return <StudentDetails />;
-      case 'Admins':
-        return <AdminDetails />;
-      case 'Tutors':
-        return <TutorDetails />;
+        return <TutorStudentDetails />;
       default:
-        return <Dashboard />;
+        return <TutorSession />;
     }
   };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-100 via-white to-blue-50 font-inter">
       
-      <AdminSidebar
+      <TutorSidebar
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         activeLink={activeLink}
@@ -43,22 +41,18 @@ const AdminLayout: React.FC = () => {
 
       <div className={`flex-1 transition-all duration-500 ${collapsed ? 'ml-20' : 'ml-72'}`}>
         
-        {/* Header */}
         <header className="bg-white/40 backdrop-blur-lg border-b border-blue-100/40 shadow-md shadow-blue-100/20 px-6 py-4 flex items-center justify-between">
           
-          {/* Optional Logo or Breadcrumb */}
           <div className="text-sm text-gray-400 hidden md:block">
-            Admin / {activeLink}
+            Tutor / {activeLink}
           </div>
 
-          {/* Title to Right */}
           <h1 className="text-xl font-bold text-right text-gray-700 tracking-tight w-full">
             {activeLink}
           </h1>
         </header>
 
-        {/* Main Content */}
-        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md">
+        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md p-6">
           {renderContent()}
         </main>
       </div>
@@ -66,4 +60,4 @@ const AdminLayout: React.FC = () => {
   );
 };
 
-export default AdminLayout;
+export default TutorLayout;

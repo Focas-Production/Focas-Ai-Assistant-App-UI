@@ -6,14 +6,14 @@ import StudentDashboard from '../pages/student/Dashboard';
 import AiAssistant from '../pages/student/AiAssistant';
 import StudentSessions from '../pages/student/Sessions';
 import ReportPage from '../pages/student/Report';
-import StudentSidebar from '../pages/student/Sidebar'
-// Tutor pages
-import TutorSession from '../pages/tutor/Session';
-import Sprint from '../pages/tutor/Sprint';
-import TutorStudentDetails from '../pages/tutor/StudentDetails';
+import StudentSidebar from '../pages/student/Sidebar';
+
 // Admin pages
 import AdminSidebar from '../pages/admin/AdminSidebar';
 import AdminLayout from '../pages/admin/AdminLayout';
+
+// Tutor pages
+import TutorLayout from '../pages/tutor/TutorLayout';
 
 
 const AppRoutes = () => (
@@ -32,12 +32,10 @@ const AppRoutes = () => (
       <Route path="/student/sidebar" element={<StudentSidebar />} />
 
       {/* Tutor Routes */}
-      <Route path="/tutor/session" element={<TutorSession />} />
-      <Route path="/tutor/sprint" element={<Sprint />} />
-      <Route path="/tutor/student-details" element={<TutorStudentDetails />} />
+      <Route path='/tutor' element={<TutorLayout />} />
 
       {/* Admin Routes */}
-      <Route path="/admin" element={<AdminLayout />} />
+      <Route path="/admin" element={<AdminLayout/>} />
 
       {/* Dev Comp Routes */}
       <Route path="/dev/admin-sidebar" element={<AdminSidebar />} />
