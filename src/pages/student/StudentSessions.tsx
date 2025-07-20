@@ -35,7 +35,7 @@ const StudentSessions = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-gradient-to-r from-green-400 to-green-600 shadow-lg shadow-green-400/30';
-      case 'upcoming': return 'bg-gradient-to-r from-blue-400 to-blue-600 shadow-lg shadow-blue-400/30';
+      case 'upcoming': return 'bg-blue-600 shadow-lg shadow-blue-400/30';
       case 'scheduled': return 'bg-gradient-to-r from-orange-400 to-orange-600 shadow-lg shadow-orange-400/30';
       default: return 'bg-gradient-to-r from-gray-400 to-gray-600 shadow-lg shadow-gray-400/30';
     }
@@ -284,7 +284,7 @@ const StudentSessions = () => {
                           </div>
                           <div className="w-full bg-blue-100/60 rounded-full h-2 shadow-inner">
                             <div 
-                              className="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full transition-all duration-500 shadow-lg"
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-500 shadow-lg"
                               style={{ width: `${session.progress}%` }}
                             />
                           </div>
