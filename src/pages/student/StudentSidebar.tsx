@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiHome, FiCalendar, FiMessageCircle, FiLayers, FiBarChart2, FiLogOut, FiMenu } from 'react-icons/fi';
+import { FiHome, FiMessageCircle, FiLayers, FiBarChart2, FiLogOut, FiMenu } from 'react-icons/fi';
 import logo from '../../assets/logo.png';
 
 const SidebarLink = ({ icon: Icon, label, active, collapsed, onClick }: any) => (
@@ -34,9 +34,9 @@ const StudentSidebar: React.FC<any> = ({
 }) => {
   const navigationItems = [
     { icon: FiHome, label: 'Dashboard' },
-    { icon: FiCalendar, label: 'Allocation' },
+    // { icon: FiCalendar, label: 'Allocation' },
     { icon: FiMessageCircle, label: 'AI Assistant' },
-    { icon: FiLayers, label: 'Student Sessions' },
+    { icon: FiLayers, label: 'Sessions' },
     { icon: FiBarChart2, label: 'Report Page' },
   ];
 

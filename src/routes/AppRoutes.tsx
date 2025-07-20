@@ -5,6 +5,7 @@ import AdminLayout from '../pages/admin/AdminLayout';
 import TutorLayout from '../pages/tutor/TutorLayout';
 // Student pages
 import StudentLayout from '../pages/student/StudentLayout';
+import LoginPage from '../pages/student/Login';
 
 
 const AppRoutes = () => (
@@ -12,7 +13,7 @@ const AppRoutes = () => (
     <Routes>
       {/* Default Redirect */}
       <Route path="*" element={<Navigate to="/login" replace />} />
-
+      <Route path="/login" element={<LoginPage />} />
       {/* Student Routes */}
       <Route path='/student' element={<StudentLayout />} />
 

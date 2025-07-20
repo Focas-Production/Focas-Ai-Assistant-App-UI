@@ -1,100 +1,82 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { FaUserCircle, FaSignOutAlt, FaRobot, FaColumns, FaCalendarAlt } from "react-icons/fa";
-import { MdAssignmentTurnedIn } from "react-icons/md";
+import React from 'react';
+import { FiCalendar, FiMessageCircle, FiLayers, FiBarChart2, FiArrowRight } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 
-const StudentDashboard = () => {
+const GlassCard = ({ icon: Icon, label, value, color }: any) => (
+  <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-lg p-5 hover:scale-105 transition-transform cursor-pointer group hover:shadow-xl">
+    <div className="flex items-center justify-between mb-2">
+      <div className={`bg-${color}-100 text-${color}-600 p-3 rounded-xl`}>
+        <Icon size={22} />
+      </div>
+      <span className={`text-${color}-600 text-xs font-semibold uppercase tracking-wider`}>
+        {label}
+      </span>
+    </div>
+    <div className="text-3xl font-extrabold text-gray-900 group-hover:text-black">{value}</div>
+  </div>
+);
+
+const ActionCard = ({ label, icon: Icon, link }: any) => (
+  <Link
+    to={link}
+    className="bg-gradient-to-br from-white/40 to-blue-50/50 backdrop-blur-md p-4 rounded-2xl hover:scale-105 transition-transform shadow-md hover:shadow-lg border border-white/20 flex items-center justify-between"
+  >
+    <div className="flex items-center gap-3">
+      <div className="bg-white text-blue-600 p-2 rounded-lg shadow-sm">
+        <Icon size={20} />
+      </div>
+      <span className="font-medium text-gray-700">{label}</span>
+    </div>
+    <FiArrowRight className="text-blue-400" />
+  </Link>
+);
+
+const StudentDashboard: React.FC = () => {
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <div className="w-1/5 bg-blue-900 text-white flex flex-col justify-between py-6 px-4">
-        <div>
-          <div className="flex items-center space-x-2 mb-8">
-            <FaUserCircle size={30} />
-            <div>
-              <div className="text-sm font-semibold">Supriya</div>
-              <div className="text-xs text-gray-300">Student</div>
-            </div>
-          </div>
+    <div className="p-8 bg-gradient-to-br from-blue-100 via-white to-blue-50 min-h-screen font-inter">
 
-          <nav className="space-y-4 text-sm">
-            <Link to="#" className="flex items-center space-x-2 hover:text-gray-300">
-              <MdAssignmentTurnedIn />
-              <span>Allocation</span>
-            </Link>
-            <Link to="#" className="flex items-center space-x-2 text-green-400 font-bold">
-              <FaColumns />
-              <span>Dashboard</span>
-            </Link>
-            <Link to="#" className="flex items-center space-x-2 hover:text-gray-300">
-              <FaRobot />
-              <span>AI_Assistant</span>
-            </Link>
-            <Link to="#" className="flex items-center space-x-2 hover:text-gray-300">
-              <FaCalendarAlt />
-              <span>Sessions</span>
-            </Link>
-          </nav>
-        </div>
-
-        <Link to="#" className="flex items-center space-x-2 text-red-400 hover:text-red-600">
-          <FaSignOutAlt />
-          <span>Logout</span>
-        </Link>
+      {/* Dashboard Header */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-extrabold text-gray-800 mb-2 tracking-tight">
+          Welcome, Student 🎓
+        </h1>
+        <p className="text-gray-500">Here’s your current academic snapshot.</p>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 bg-white p-10 relative">
-        {/* Timer Circle */}
-        <div className="absolute top-5 left-5 w-16 h-16 rounded-full border-4 border-green-500 flex items-center justify-center text-green-600 font-bold">
-          00:08
-        </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <GlassCard icon={FiCalendar} label="Allocations" value="5 Subjects" color="blue" />
+        <GlassCard icon={FiMessageCircle} label="AI Queries" value="23" color="green" />
+        <GlassCard icon={FiLayers} label="Sessions" value="3 Active" color="purple" />
+        <GlassCard icon={FiBarChart2} label="Report Score" value="88%" color="orange" />
+      </div>
 
-        {/* FOCAS Logo */}
-        <div className="absolute top-5 right-10 text-right">
-          <div className="text-2xl font-extrabold text-blue-900 tracking-tight">FOCAS</div>
-          <div className="text-sm text-gray-600">YOUR LAST ATTEMPT</div>
-        </div>
-
-        {/* Table */}
-        <div className="mt-20">
-          <table className="w-full border border-gray-200 text-sm">
-            <thead className="bg-blue-50 border-b border-gray-200">
-              <tr>
-                <th className="py-2 px-4 text-left">Subject</th>
-                <th className="py-2 px-4 text-left">Chapter</th>
-                <th className="py-2 px-4 text-left">Topic</th>
-                <th className="py-2 px-4 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { subject: "Accounts", chapter: "Chapter 4", topic: "Topic 2", status: "Pending" },
-                { subject: "Accounts", chapter: "Chapter 3", topic: "Topic 1.2", status: "Come to live" },
-                { subject: "Accounts", chapter: "Chapter 2", topic: "Topic 1.1", status: "Completed" },
-                { subject: "Accounts", chapter: "Chapter 1", topic: "Topic 1", status: "Completed" },
-                { subject: "Tax", chapter: "Chapter 2", topic: "Topic 1.1", status: "Completed" },
-                { subject: "Tax", chapter: "Chapter 1", topic: "Topic 1", status: "Completed" }
-              ].map((row, index) => (
-                <tr key={index} className="border-b">
-                  <td className="py-2 px-4">{row.subject}</td>
-                  <td className="py-2 px-4">{row.chapter}</td>
-                  <td className="py-2 px-4">{row.topic}</td>
-                  <td className={`py-2 px-4 font-semibold ${
-                    row.status === "Completed"
-                      ? "text-green-600"
-                      : row.status === "Come to live"
-                      ? "text-blue-500"
-                      : "text-gray-500"
-                  }`}>
-                    {row.status}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Quick Links */}
+      <div className="mb-12">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Access</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <ActionCard label="View Allocations" icon={FiCalendar} link="/student/allocation" />
+          <ActionCard label="Launch AI Assistant" icon={FiMessageCircle} link="/student/ai-assistant" />
+          <ActionCard label="My Sessions" icon={FiLayers} link="/student/student-sessions" />
+          <ActionCard label="View Report" icon={FiBarChart2} link="/student/report-page" />
         </div>
       </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/30 shadow-xl p-6">
+        <h2 className="text-lg font-bold text-gray-800 mb-4">Recent Activity</h2>
+        <ul className="divide-y divide-gray-200 text-sm text-gray-600">
+          {[
+            '📚 Allocated new subject: Advanced Mathematics.',
+            '💬 You asked 5 questions to the AI Assistant today.',
+            '🎯 Completed 2 study sessions.',
+            '📈 Your report score improved by 4%.',
+          ].map((activity, index) => (
+            <li key={index} className="py-3">{activity}</li>
+          ))}
+        </ul>
+      </div>
+
     </div>
   );
 };
