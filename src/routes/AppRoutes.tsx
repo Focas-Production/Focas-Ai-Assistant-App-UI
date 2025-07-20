@@ -20,6 +20,9 @@ import TutorDetails from '../pages/admin/TutorDetails';
 const AppRoutes = () => (
   <Router>
     <Routes>
+      {/* Default Redirect */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+      
       {/* Student Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/allocation" element={<Allocation />} />
@@ -39,9 +42,6 @@ const AppRoutes = () => (
       <Route path="/admin/student-details" element={<AdminStudentDetails />} />
       <Route path="/admin/admin-details" element={<AdminDetails />} />
       <Route path="/admin/tutor-details" element={<TutorDetails />} />
-
-      {/* Default Redirect */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   </Router>
 );
