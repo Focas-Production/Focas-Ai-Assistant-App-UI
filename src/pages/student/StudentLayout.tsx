@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StudentDashboard from '../student/StudentDashboard';
-import Allocation from '../student/StudentAllocation';
 import AiAssistant from '../student/StudentAiAssistant';
 import StudentSessions from '../student/StudentSessions';
 import ReportPage from '../student/StudentReport';
@@ -20,11 +19,11 @@ const StudentLayout: React.FC = () => {
     switch (activeLink) {
       case 'Dashboard':
         return <StudentDashboard />;
-      case 'Allocation':
-        return <Allocation />;
+      // case 'Allocation':
+      //   return <Allocation />;
       case 'AI Assistant':
         return <AiAssistant />;
-      case 'Student Sessions':
+      case 'Sessions':
         return <StudentSessions />;
       case 'Report Page':
         return <ReportPage />;
