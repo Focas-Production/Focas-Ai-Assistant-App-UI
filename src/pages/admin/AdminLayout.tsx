@@ -6,14 +6,12 @@ import AdminDetails from './AdminDetails';
 import TutorDetails from './TutorDetails';
 import AdminSidebar from './AdminSidebar';
 
-
 const AdminLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [activeLink, setActiveLink] = useState('Dashboard');
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Optional: Clear session/token here
     navigate('/login');
   };
 
@@ -33,7 +31,8 @@ const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-gray-100 via-white to-blue-50 font-inter">
+      
       <AdminSidebar
         collapsed={collapsed}
         setCollapsed={setCollapsed}
@@ -43,11 +42,23 @@ const AdminLayout: React.FC = () => {
       />
 
       <div className={`flex-1 transition-all duration-500 ${collapsed ? 'ml-20' : 'ml-72'}`}>
-        <header className="bg-white shadow px-8 py-6 border-b">
-          <h1 className="text-xl font-bold">{activeLink}</h1>
+        
+        {/* Header */}
+        <header className="bg-white/40 backdrop-blur-lg border-b border-blue-100/40 shadow-md shadow-blue-100/20 px-6 py-4 flex items-center justify-between">
+          
+          {/* Optional Logo or Breadcrumb */}
+          <div className="text-sm text-gray-400 hidden md:block">
+            Admin / {activeLink}
+          </div>
+
+          {/* Title to Right */}
+          <h1 className="text-xl font-bold text-right text-gray-700 tracking-tight w-full">
+            {activeLink}
+          </h1>
         </header>
 
-        <main className="overflow-auto h-full">
+        {/* Main Content */}
+        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md p-6">
           {renderContent()}
         </main>
       </div>
