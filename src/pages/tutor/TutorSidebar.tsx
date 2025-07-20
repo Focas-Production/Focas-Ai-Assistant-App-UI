@@ -1,4 +1,3 @@
-import React from 'react';
 import { FiMenu, FiUserCheck, FiTarget, FiUsers, FiLogOut } from 'react-icons/fi';
 import logo from '../../assets/logo.png';
 
