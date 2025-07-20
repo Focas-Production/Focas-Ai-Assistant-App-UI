@@ -16,13 +16,15 @@ import AdminDashboard from '../pages/admin/Dashboard';
 import AdminStudentDetails from '../pages/admin/StudentDetails';
 import AdminDetails from '../pages/admin/AdminDetails';
 import TutorDetails from '../pages/admin/TutorDetails';
+import AdminSidebar from '../pages/admin/AdminSidebar';
+
 
 const AppRoutes = () => (
   <Router>
     <Routes>
       {/* Default Redirect */}
       <Route path="*" element={<Navigate to="/login" replace />} />
-      
+
       {/* Student Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/allocation" element={<Allocation />} />
@@ -30,7 +32,7 @@ const AppRoutes = () => (
       <Route path="/student/ai-assistant" element={<AiAssistant />} />
       <Route path="/student/sessions" element={<StudentSessions />} />
       <Route path="/student/report" element={<ReportPage />} />
-      <Route path="/student/sidebar" element={<StudentSidebar /> } />
+      <Route path="/student/sidebar" element={<StudentSidebar />} />
 
       {/* Tutor Routes */}
       <Route path="/tutor/session" element={<TutorSession />} />
@@ -42,7 +44,11 @@ const AppRoutes = () => (
       <Route path="/admin/student-details" element={<AdminStudentDetails />} />
       <Route path="/admin/admin-details" element={<AdminDetails />} />
       <Route path="/admin/tutor-details" element={<TutorDetails />} />
+
+      {/* Dev Comp Routes */}
+      <Route path="/dev/admin-sidebar" element={<AdminSidebar />} />
     </Routes>
+
   </Router>
 );
 
