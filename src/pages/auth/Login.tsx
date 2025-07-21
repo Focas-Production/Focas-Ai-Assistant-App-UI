@@ -76,7 +76,7 @@ const LoginPage: React.FC = () => {
           </div>
 
           <div className="flex justify-end text-xs text-blue-600 font-medium">
-            <a href="#" className="hover:underline">Forgot password?</a>
+            <a href="/forgot-password" className="hover:underline">Forgot password?</a>
           </div>
 
           <button
@@ -114,7 +114,7 @@ const LoginPage: React.FC = () => {
         {/* Footer */}
         <p className="text-center text-sm text-gray-500 mt-8">
           Don’t have an account?{" "}
-          <a href="#" className="text-blue-600 font-medium hover:underline">
+          <a href="/signup" className="text-blue-600 font-medium hover:underline">
             Sign up
           </a>
         </p>

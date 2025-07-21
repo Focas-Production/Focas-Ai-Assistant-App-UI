@@ -5,15 +5,22 @@ import AdminLayout from '../pages/admin/AdminLayout';
 import TutorLayout from '../pages/tutor/TutorLayout';
 // Student pages
 import StudentLayout from '../pages/student/StudentLayout';
-import LoginPage from '../pages/student/Login';
+// Auth pages
+import LoginPage from '../pages/auth/Login';
+import SignUpPage from '../pages/auth/Signup';
+import ForgetPasswordPage from '../pages/auth/ForgetPasswordPage';
 
 
 const AppRoutes = () => (
   <Router>
     <Routes>
+      
       {/* Default Redirect */}
       <Route path="*" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+
       {/* Student Routes */}
       <Route path='/student' element={<StudentLayout />} />
 
