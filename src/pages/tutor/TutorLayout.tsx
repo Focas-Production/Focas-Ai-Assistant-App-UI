@@ -52,7 +52,7 @@ const TutorLayout: React.FC = () => {
           </h1>
         </header>
 
-        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md p-6">
+        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md">
           {renderContent()}
         </main>
       </div>
