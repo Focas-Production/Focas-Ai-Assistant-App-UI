@@ -26,8 +26,8 @@ const TutorSessions: React.FC = () => {
     if (saved) return JSON.parse(saved);
     return [
       { id: 1, date: new Date().toLocaleDateString('en-GB'), session: '6am - 9am', room: 'Room 1' },
-      { id: 2, date: new Date().toLocaleDateString('en-GB'), session: '10am - 1pm', room: 'Room 2' },
-      { id: 3, date: new Date().toLocaleDateString('en-GB'), session: '2pm - 5pm', room: 'Room 1' },
+      // { id: 2, date: new Date().toLocaleDateString('en-GB'), session: '10am - 1pm', room: 'Room 2' },
+      // { id: 3, date: new Date().toLocaleDateString('en-GB'), session: '2pm - 5pm', room: 'Room 1' },
     ];
   });
   const [showModal, setShowModal] = useState(false);
@@ -38,7 +38,7 @@ const TutorSessions: React.FC = () => {
     room: '',
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(8);
 
   const handleViewSession = (sessionId: number) => {
     navigate(`/tutor/session-view/${sessionId}`);
@@ -135,56 +135,57 @@ const TutorSessions: React.FC = () => {
         <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/30 bg-gray-100">
-                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Date</th>
-                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Sessions</th>
-                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Room</th>
-                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedSessions.map((session: Session, index: number) => (
-                  <tr
-                    key={session.id}
-                    className={`${index < paginatedSessions.length - 1 ? 'border-b border-black/10' : ''} hover:bg-white/20 transition-colors duration-200`}
-                  >
-                    <td className="py-4 px-4 text-gray-800 font-medium">{session.date}</td>
-                    <td className="py-4 px-4 text-gray-700">{session.session}</td>
-                    <td className="py-4 px-4 text-gray-700">{session.room}</td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center justify-between">
-                        <button 
-                          onClick={() => handleViewSession(session.id)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
-                        >
-                          View
-                        </button>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditSession(session)}
-                            className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
-                            title="Edit"
-                          >
-                            <svg className="w-5 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSession(session.id)}
-                            className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
-                            title="Delete"
-                          >
-                            <svg className="w-5 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 2 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                  </div>
-                </div>
-                    </td>
-                  </tr>
-              ))}
-              </tbody>
+            <thead>
+  <tr className="border-b border-white/30 bg-gray-100">
+    <th className="w-1/5 text-center py-4 px-4 text-blue-900 font-semibold text-lg">Date</th>
+    <th className="w-1/5 text-center py-4 px-4 text-blue-900 font-semibold text-lg">Sessions</th>
+    <th className="w-1/5 text-center py-4 px-4 text-blue-900 font-semibold text-lg">Room</th>
+    <th className="w-1/5 text-center py-4 px-4 text-blue-900 font-semibold text-lg">Status</th>
+    <th className="w-1/5 text-center py-4 px-4 text-blue-900 font-semibold text-lg">Action</th>
+  </tr>
+</thead>
+<tbody>
+  {paginatedSessions.map((session: Session, index: number) => (
+    <tr
+      key={session.id}
+      className={`${index < paginatedSessions.length - 1 ? 'border-b border-black/10' : ''} hover:bg-white/20 transition-colors duration-200`}
+    >
+      <td className="w-1/5 text-center py-4 px-4 text-gray-800 font-medium">{session.date}</td>
+      <td className="w-1/5 text-center py-4 px-4 text-gray-700">{session.session}</td>
+      <td className="w-1/5 text-center py-4 px-4 text-gray-700">{session.room}</td>
+      <td className="w-1/5 text-center py-4 px-4">
+        <button 
+          onClick={() => handleViewSession(session.id)}
+          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
+        >
+          View
+        </button>
+      </td>
+      <td className="w-1/5 text-center py-4 px-4">
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => handleEditSession(session)}
+            className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
+            title="Edit"
+          >
+            <svg className="w-5 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          <button
+            onClick={() => handleDeleteSession(session.id)}
+            className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
+            title="Delete"
+          >
+            <svg className="w-5 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 2 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
             </table>
           </div>
           <Pagination
@@ -209,26 +210,31 @@ const TutorSessions: React.FC = () => {
               </button>
               <h2 className="text-xl font-bold text-gray-800 mb-6">Add Session</h2>
               <form onSubmit={handleAddSession} className="space-y-5">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">Session</label>
-                  <select
-                    value={form.session}
-                    onChange={e => setForm(f => ({ ...f, session: e.target.value }))}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
-                    required
-                  >
-                    <option value="">Select session</option>
-                    {SESSION_OPTIONS.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
+              <div className="relative">
+  <select
+    value={form.session}
+    onChange={e => setForm(f => ({ ...f, session: e.target.value }))}
+    className="w-full appearance-none px-3 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+    required
+  >
+    <option value="">Select session</option>
+    {SESSION_OPTIONS.map(opt => (
+      <option key={opt} value={opt}>{opt}</option>
+    ))}
+  </select>
+     <div className="pointer-events-none absolute top-6 right-5 transform -translate-y-1/2 text-gray-700">
+     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+     </svg>
+   </div>
+</div>
+
+                <div className="relative">
                   <label className="block text-gray-700 font-medium mb-2">Room</label>
                   <select
                     value={form.room}
                     onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                    className="w-full appearance-none px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                     required
                   >
                     <option value="">Select room</option>
@@ -236,6 +242,11 @@ const TutorSessions: React.FC = () => {
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
+                  <div className="pointer-events-none absolute top-14 right-5 transform -translate-y-1/2 text-gray-700">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               <button 
                   type="submit"
@@ -261,12 +272,12 @@ const TutorSessions: React.FC = () => {
               </button>
               <h2 className="text-xl font-bold text-gray-800 mb-6">Edit Session</h2>
               <form onSubmit={handleEditSessionSubmit} className="space-y-5">
-                <div>
+                <div className="relative">
                   <label className="block text-gray-700 font-medium mb-2">Session</label>
                   <select
                     value={form.session}
                     onChange={e => setForm(f => ({ ...f, session: e.target.value }))}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                    className="w-full appearance-none px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                     required
                   >
                     <option value="">Select session</option>
@@ -274,13 +285,18 @@ const TutorSessions: React.FC = () => {
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
+                  <div className="pointer-events-none absolute top-14 right-5 transform -translate-y-1/2 text-gray-700">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
           </div>
-                <div>
+                <div className="relative">
                   <label className="block text-gray-700 font-medium mb-2">Room</label>
                   <select
                     value={form.room}
                     onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                    className="w-full appearance-none px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                     required
                   >
                     <option value="">Select room</option>
@@ -288,6 +304,11 @@ const TutorSessions: React.FC = () => {
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
+                  <div className="pointer-events-none absolute top-14 right-5 transform -translate-y-1/2 text-gray-700">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
                 <button 
                     type="submit"

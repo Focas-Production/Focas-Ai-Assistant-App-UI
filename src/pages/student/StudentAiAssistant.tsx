@@ -22,30 +22,50 @@ const StudentAI: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Load existing chat history for current session
+  // Helper function to generate unique session key
+  const generateSessionKey = (date: string, session: string, room: string) => {
+    return `studentChatHistory_${date}_${session}_${room}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  };
+
+  // Load existing chat history for current session and get current topic
   useEffect(() => {
     const allocationData = localStorage.getItem('studentAllocationData');
-    if (allocationData) {
+    const userInfo = localStorage.getItem('userInfo');
+    
+    if (allocationData && userInfo) {
       const data = JSON.parse(allocationData);
-      const savedHistory = localStorage.getItem('studentChatHistory');
-      if (savedHistory) {
-        const history = JSON.parse(savedHistory);
-        const sessionKey = `${data.date}-${data.session}-${data.room}`;
-        console.log('Loading chat history for session:', sessionKey);
-        
-        const currentSession = history.find((session: any) => {
-          const existingKey = `${session.date}-${session.session}-${session.room}`;
-          return existingKey === sessionKey;
-        });
-        
-        if (currentSession) {
-          console.log('Found existing session:', currentSession);
+      const user = JSON.parse(userInfo);
+      
+      // Get current topic from sprintData
+      const sprintData = JSON.parse(localStorage.getItem('sprintData') || '[]');
+      const currentStudent = sprintData.find((sprint: any) => sprint.name === user.name);
+      
+      if (currentStudent && currentStudent.topic && currentStudent.topic !== 'Topic 1') {
+        setCurrentTopic(currentStudent.topic);
+        console.log('Current topic set to:', currentStudent.topic);
+      } else {
+        setCurrentTopic('');
+        console.log('No specific topic allocated yet');
+      }
+      
+      // Generate unique session key
+      const sessionKey = generateSessionKey(data.date, data.session, data.room);
+      console.log('Loading chat history for session key:', sessionKey);
+      
+      // Load session-specific chat history
+      const savedSessionData = localStorage.getItem(sessionKey);
+      if (savedSessionData) {
+        try {
+          const sessionData = JSON.parse(savedSessionData);
+          console.log('Found existing session data:', sessionData);
+          
           // Convert saved messages to Message format
-          const loadedMessages = currentSession.messages.map((msg: any) => ({
+          const loadedMessages = sessionData.messages.map((msg: any) => ({
             id: msg.id || Date.now().toString(),
             sender: msg.role === 'user' ? 'user' : 'ai',
             text: msg.content,
@@ -53,12 +73,41 @@ const StudentAI: React.FC = () => {
             file: msg.file
           }));
           setMessages(loadedMessages);
-        } else {
-          console.log('No existing session found, starting fresh');
+        } catch (error) {
+          console.error('Error parsing session data:', error);
         }
+      } else {
+        console.log('No existing session found, starting fresh');
       }
     }
   }, []);
+
+  // Monitor for topic changes
+  useEffect(() => {
+    const checkTopicUpdate = () => {
+      const userInfo = localStorage.getItem('userInfo');
+      if (userInfo) {
+        const user = JSON.parse(userInfo);
+        const sprintData = JSON.parse(localStorage.getItem('sprintData') || '[]');
+        const currentStudent = sprintData.find((sprint: any) => sprint.name === user.name);
+        
+        if (currentStudent && currentStudent.topic && currentStudent.topic !== 'Topic 1') {
+          if (currentStudent.topic !== currentTopic) {
+            setCurrentTopic(currentStudent.topic);
+            console.log('Topic updated to:', currentStudent.topic);
+          }
+        }
+      }
+    };
+
+    // Check immediately
+    checkTopicUpdate();
+    
+    // Set up interval to check for topic updates every 2 seconds
+    const interval = setInterval(checkTopicUpdate, 2000);
+    
+    return () => clearInterval(interval);
+  }, [currentTopic]);
 
   // Save chat history whenever messages change
   const saveChatHistory = (updatedMessages: Message[]) => {
@@ -66,9 +115,7 @@ const StudentAI: React.FC = () => {
     if (!allocationData) return;
 
     const data = JSON.parse(allocationData);
-    const savedHistory = localStorage.getItem('studentChatHistory');
-    const history = savedHistory ? JSON.parse(savedHistory) : [];
-
+    
     // Convert messages to the format expected by StudentReport
     const sessionMessages = updatedMessages.map(msg => ({
       id: msg.id,
@@ -78,33 +125,32 @@ const StudentAI: React.FC = () => {
       file: msg.file
     }));
 
-    // Create a unique session identifier
-    const sessionKey = `${data.date}-${data.session}-${data.room}`;
-    console.log('Saving chat history for session:', sessionKey);
+    // Generate unique session key
+    const sessionKey = generateSessionKey(data.date, data.session, data.room);
+    console.log('Saving chat history for session key:', sessionKey);
 
-    // Find existing session or create new one
-    const existingSessionIndex = history.findIndex((session: any) => {
-      const existingKey = `${session.date}-${session.session}-${session.room}`;
-      return existingKey === sessionKey;
-    });
+    // Create session data object
+    const sessionData = {
+      date: data.date,
+      session: data.session,
+      room: data.room,
+      messages: sessionMessages
+    };
 
-    if (existingSessionIndex >= 0) {
-      // Update existing session
-      console.log('Updating existing session at index:', existingSessionIndex);
-      history[existingSessionIndex].messages = sessionMessages;
-    } else {
-      // Create new session
-      console.log('Creating new session with key:', sessionKey);
-      history.push({
-        date: data.date,
-        session: data.session,
-        room: data.room,
-        messages: sessionMessages
-      });
+    // Save session-specific data
+    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    console.log('Saved session data:', sessionData);
+    console.log('Session key used:', sessionKey);
+    
+    // Debug: List all sessions after saving
+    const allKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('studentChatHistory_')) {
+        allKeys.push(key);
+      }
     }
-
-    localStorage.setItem('studentChatHistory', JSON.stringify(history));
-    console.log('Updated chat history:', history);
+    console.log('All session keys after saving:', allKeys);
   };
 
   // Save messages whenever they change
@@ -194,6 +240,8 @@ const StudentAI: React.FC = () => {
             
             Students will submit only their answers via text or voice. The question is not provided. 
             
+            IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
+            
             Your responsibilities:
             
             1. Carefully infer the most likely CA-related question based on the student's answer.
@@ -201,8 +249,10 @@ const StudentAI: React.FC = () => {
             3. Say whether the answer is correct, partially correct, or incorrect.
             4. If incorrect or partially correct, provide the correct answer or explanation.
             5. Give a score out of 10 and an accuracy percentage.
-            6. Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.
+            6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
             7. Never make up unrelated questions. Stick strictly to CA context.
+            
+            ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
             
             Respond in the following format:
             
@@ -330,6 +380,8 @@ const StudentAI: React.FC = () => {
             
             Students will submit only their answers via text or voice. The question is not provided. 
             
+            IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
+            
             Your responsibilities:
             
             1. Carefully infer the most likely CA-related question based on the student's answer.
@@ -337,8 +389,10 @@ const StudentAI: React.FC = () => {
             3. Say whether the answer is correct, partially correct, or incorrect.
             4. If incorrect or partially correct, provide the correct answer or explanation.
             5. Give a score out of 10 and an accuracy percentage.
-            6. Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.
+            6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
             7. Never make up unrelated questions. Stick strictly to CA context.
+            
+            ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
             
             Respond in the following format:
             
@@ -479,9 +533,16 @@ const StudentAI: React.FC = () => {
                 </div>
               <div>
                 <h1 className="font-semibold text-gray-900">StudyAI Assistant</h1>
-              <p className="text-sm text-gray-500">CA Study Assistant</p>
+                <p className="text-sm text-gray-500">CA Study Assistant</p>
+                {currentTopic && (
+                  <div className="mt-1">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      📚 Topic: {currentTopic}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
         </header>
 
         {/* Messages Area */}
@@ -494,6 +555,17 @@ const StudentAI: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   Hello! I'm your CA Study Assistant
                 </h2>
+                {currentTopic ? (
+                  <p className="text-gray-600 mb-4">
+                    I'm currently focused on helping you with <span className="font-semibold text-blue-600">{currentTopic}</span>.
+                    <br />
+                    Please ask questions related to this topic for the best assistance.
+                  </p>
+                ) : (
+                  <p className="text-gray-600 mb-4">
+                    Waiting for your tutor to assign a specific topic. I'll help you with CA studies once a topic is selected.
+                  </p>
+                )}
               </div>
             )}
 
@@ -593,7 +665,7 @@ const StudentAI: React.FC = () => {
                     sendMessage();
                   }
                 }}
-                placeholder="Ask me anything about your CA studies..."
+                placeholder={currentTopic ? `Ask me about ${currentTopic}...` : "Ask me anything about your CA studies..."}
                 className="flex-1 bg-transparent text-gray-900 placeholder-gray-500 resize-none max-h-32 min-h-[24px] py-2 px-0 border-none outline-none"
                 rows={1}
                 style={{ lineHeight: '24px' }}

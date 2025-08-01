@@ -49,9 +49,9 @@ const Pagination: React.FC<PaginationProps> = ({
       >
         Next
       </button>
-      <span className="ml-4 text-gray-500 text-sm">
+      {/* <span className="ml-4 text-gray-500 text-sm">
         Page {currentPage} of {totalPages}
-      </span>
+      </span> */}
     </div>
   );
 };

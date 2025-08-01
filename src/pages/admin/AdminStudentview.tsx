@@ -70,7 +70,7 @@ const AdminStudentview = ({ setActiveLink }: AdminStudentviewProps) => {
     <div className="w-full h-full bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
       <div className="max-w-7xl mx-auto">
         
-        {/* Back Arrow */}
+        {/* Back Arrow
         <button 
           onClick={handleBack}
           className="absolute top-4 left-4 z-10 bg-white/80 backdrop-blur-lg border border-white/20 rounded-full p-3 shadow-lg hover:bg-white/90 transition-all duration-200"
@@ -79,7 +79,7 @@ const AdminStudentview = ({ setActiveLink }: AdminStudentviewProps) => {
           <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-        </button>
+        </button> */}
 
         {/* Student Info */}
         <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl p-6 mb-6">
@@ -129,6 +129,8 @@ const AdminStudentview = ({ setActiveLink }: AdminStudentviewProps) => {
                               studentName: student.name,
                               studentPhone: student.phoneNumber
                             }));
+                            // Set navigation source for admin
+                            localStorage.setItem('reportNavigationSource', 'admin');
                             navigate('/admin/student-report');
                           }}
                           className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"

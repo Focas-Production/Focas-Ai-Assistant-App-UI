@@ -4,6 +4,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import TutorSession from './TutorSession';
 import Sprint from './TutorSprint';
 import TutorSessionview from './TutorSessionview';
+import StudentReport from '../student/StudentReport';
 // import TutorStudentDetails from './TutorStudentDetails';
 import Navbar from '../../components/layout/Navbar';
 
@@ -47,6 +48,7 @@ const TutorLayout: React.FC = () => {
           <Routes>
             <Route path="/" element={renderContent()} />
             <Route path="session-view/:sessionId" element={<TutorSessionview />} />
+            <Route path="student-report" element={<StudentReport />} />
           </Routes>
         </main>
       </div>

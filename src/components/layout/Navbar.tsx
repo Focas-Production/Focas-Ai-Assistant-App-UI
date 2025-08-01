@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface NavbarProps {
   userType?: 'student' | 'tutor' | 'admin';
@@ -6,6 +7,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ userType, activeLink }) => {
+  const navigate = useNavigate();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showPasswordPopup, setShowPasswordPopup] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -19,6 +21,10 @@ const Navbar: React.FC<NavbarProps> = ({ userType, activeLink }) => {
 
   const handleProfileClick = () => {
     setShowProfilePopup(true);
+  };
+
+  const handleBackClick = () => {
+    navigate(-1); // Go back to previous page
   };
 
   const handleChangePassword = () => {
@@ -107,9 +113,19 @@ const Navbar: React.FC<NavbarProps> = ({ userType, activeLink }) => {
 
   return (
     <>
-      <header className="bg-white/40 backdrop-blur-lg border-b border-blue-100/40 shadow-md shadow-blue-100/20 px-6 py-4 flex items-center justify-between">
-        {/* Left side - empty for now */}
-        <div></div>
+      <header className="bg-white backdrop-blur-lg border-b border-blue-100/40 shadow-md shadow-blue-100/20 px-6 py-4 flex items-center justify-between"> 
+        {/* Left side - Back arrow */}
+        <div className="flex items-center">
+          <button
+            onClick={handleBackClick}
+            className="bg-blue-100 p-2 rounded-full hover:bg-blue-200 transition-colors duration-200 cursor-pointer"
+            title="Go back"
+          >
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
         {/* Right side - Profile section */}
         <div className="flex items-center gap-3">
           <div className="text-right">

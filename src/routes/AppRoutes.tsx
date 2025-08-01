@@ -7,7 +7,7 @@ import TutorLayout from '../pages/tutor/TutorLayout';
 import StudentLayout from '../pages/student/StudentLayout';
 // Auth pages
 import LoginPage from '../pages/auth/Login';
-import SignUpPage from '../pages/auth/Signup';
+// import SignUpPage from '../pages/auth/Signup';
 import ForgetPasswordPage from '../pages/auth/ForgetPasswordPage';
 
 
@@ -18,7 +18,7 @@ const AppRoutes = () => (
       {/* Default Redirect */}
       <Route path="*" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
+      {/* <Route path="/signup" element={<SignUpPage />} /> */}
       <Route path="/forgot-password" element={<ForgetPasswordPage />} />
 
       {/* Student Routes */}

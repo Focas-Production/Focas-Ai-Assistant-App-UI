@@ -32,16 +32,51 @@ const TutorSprint = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
 
-  const TOPIC_OPTIONS = ["Topic 1", "Topic 2", "Topic 3"];
+  const TOPIC_OPTIONS = ["Company Accounts", "Profit and Loss", "Accouting standards"];
   const STATUS_OPTIONS = ["pending", "completed", "come to live"];
 
-  // Load students from localStorage
+  // Function to check if current time and date match student's session
+  const isCurrentTimeAndDateInSession = (sessionTime: string, sessionDate: string): boolean => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    // Get current date in DD/MM/YYYY format
+    const currentDate = now.toLocaleDateString('en-GB');
+
+    // Check if dates match
+    if (sessionDate !== currentDate) {
+      return false;
+    }
+
+    // Parse session time ranges
+    const sessionRanges: { [key: string]: { start: number; end: number } } = {
+      '6am - 9am': { start: 6 * 60, end: 9 * 60 }, // 6:00 AM to 9:00 AM
+      '10am - 1pm': { start: 10 * 60, end: 13 * 60 }, // 10:00 AM to 1:00 PM
+      '2pm - 5pm': { start: 14 * 60, end: 17 * 60 }, // 2:00 PM to 5:00 PM
+      '7pm - 10pm': { start: 19 * 60, end: 22 * 60 }, // 7:00 PM to 10:00 PM
+    };
+
+    const range = sessionRanges[sessionTime];
+    if (!range) return false;
+
+    return currentTimeInMinutes >= range.start && currentTimeInMinutes <= range.end;
+  };
+
+  // Load students from localStorage and filter by current session time
   useEffect(() => {
     const students = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
-    setSessionStudents(students);
     
-    // Initialize sprints for each student
-    const initialSprints = students.map((student: SessionStudent) => ({
+    // Filter students based on current time and date matching their session
+    const filteredStudents = students.filter((student: SessionStudent) => {
+      return isCurrentTimeAndDateInSession(student.session, student.date);
+    });
+    
+    setSessionStudents(filteredStudents);
+    
+    // Initialize sprints only for students in current session time
+    const initialSprints = filteredStudents.map((student: SessionStudent) => ({
       id: student.id,
       name: student.name,
       topic: "Topic 1",
@@ -214,14 +249,37 @@ const TutorSprint = () => {
   );
   };
 
+  // Get current session time and date for display
+  const getCurrentSessionInfo = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    const currentDate = now.toLocaleDateString('en-GB');
+
+    const sessionRanges: { [key: string]: { start: number; end: number } } = {
+      '6am - 9am': { start: 6 * 60, end: 9 * 60 },
+      '10am - 1pm': { start: 10 * 60, end: 13 * 60 },
+      '2pm - 5pm': { start: 14 * 60, end: 17 * 60 },
+      '7pm - 10pm': { start: 19 * 60, end: 22 * 60 },
+    };
+
+    for (const [session, range] of Object.entries(sessionRanges)) {
+      if (currentTimeInMinutes >= range.start && currentTimeInMinutes <= range.end) {
+        return { session, date: currentDate };
+      }
+    }
+    return { session: 'No active session', date: currentDate };
+  };
+
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        {/* <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-6 shadow-2xl">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-6 shadow-2xl">
           <h1 className="text-3xl font-bold text-blue-700 mb-2">Tutor Sprint Management</h1>
-          <p className="text-slate-600">Monitor and manage student sprint sessions</p>
-        </div> */}
+          <p className="text-slate-600">Current Session: <span className="font-semibold text-blue-600">{getCurrentSessionInfo().session}</span> | Date: <span className="font-semibold text-blue-600">{getCurrentSessionInfo().date}</span></p>
+        </div>
 
         {/* Table */}
         <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
@@ -229,57 +287,55 @@ const TutorSprint = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Topic</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Timer</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Feedback</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                  <th className="w-1/5 text-center px-6 py-6 text-lg font-semibold text-blue-900">Name</th>
+                  <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Topic</th>
+                  <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Timer</th>
+                  <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Feedback</th>
+                  <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {sprints.map((sprint, index) => (
                   <tr 
                     key={sprint.id}
-                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
-                      index === sprints.length - 1 ? '' : 'border-b border-gray-200'
-                    }`}
+                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${index === sprints.length - 1 ? '' : 'border-b border-gray-200'}`}
                   >
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                    <td className="w-1/5 text-center px-6 py-4 text-lg text-gray-900 font-medium">
                       {sprint.name}
                     </td>
-                    <td className="px-6 py-4">
-                <select
-                        value={sprint.topic}
-                        onChange={(e) => handleTopicChange(sprint.id, e.target.value)}
-                        className="w-full px-2 py-1 focus:outline-none"
-                >
-                        {TOPIC_OPTIONS.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                </select>
-                    </td>
-                                        <td className="px-6 py-4">
-            <div className="flex items-center gap-3">
-                <input
+                    <td className="w-1/5 text-center px-6 py-4">
+  <div className="inline-flex items-center justify-center gap-1">
+    <span className="text-gray-900 font-medium"></span>
+    <select
+      value={sprint.topic}
+      onChange={(e) => handleTopicChange(sprint.id, e.target.value)}
+      className="px-5 py-1  rounded focus:outline-none text-lg"
+      style={{ minWidth: 0 }}
+    >
+      {TOPIC_OPTIONS.map(option => (
+        <option key={option} value={option}>{option}</option>
+      ))}
+    </select>
+  </div>
+</td>
+                    <td className="w-1/5 text-center px-6 py-4">
+                      <div className="flex items-center justify-center gap-3">
+                        <input
                           type="number"
                           min="1"
                           value={sprint.timer.duration}
                           onChange={(e) => handleTimerDurationChange(sprint.id, parseInt(e.target.value) || 1)}
-                          className="w-20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          className="w-20 px-3 py-2 text-center focus:outline-none  text-lg"
                           disabled={sprint.timer.isRunning}
                           placeholder="mins"
                         />
-                        <span className="text-sm text-gray-500">mins</span>
-                        <span className="text-sm font-mono text-gray-700 min-w-[60px]">
+                        <span className="text-lg text-gray-500">mins</span>
+                        <span className="text-lg font-mono text-gray-700 min-w-[60px]">
                           {formatTime(sprint.timer.time)}
                         </span>
                         <button
                           onClick={() => handleTimerToggle(sprint.id)}
-                          className={`p-2 transition-colors ${
-                            sprint.timer.isRunning
-                              ? 'text-red-500 hover:text-red-600'
-                              : 'text-green-500 hover:text-green-600'
-                          }`}
+                          className={`p-2 transition-colors ${sprint.timer.isRunning ? 'text-red-500 hover:text-red-600' : 'text-green-500 hover:text-green-600'}`}
                           title={sprint.timer.isRunning ? 'Stop' : 'Start'}
                         >
                           {sprint.timer.isRunning ? (
@@ -292,23 +348,26 @@ const TutorSprint = () => {
                               <polygon points="5,3 19,12 5,21" fill="currentColor"/>
                             </svg>
                           )}
-          </button>
-        </div>
+                        </button>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td className="w-1/5 text-center px-6 py-4 text-lg text-gray-700">
                       {sprint.feedback}
                     </td>
-                    <td className="px-6 py-4">
-                      <select
-                        value={sprint.status}
-                        onChange={(e) => handleStatusChange(sprint.id, e.target.value)}
-                        className="w-full px-2 py-1 focus:outline-none"
-                      >
-                        {STATUS_OPTIONS.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </td>
+                    <td className="w-1/5 text-center px-6 py-4">
+                    <div className="inline-flex items-center justify-center gap-1">
+  <select
+    value={sprint.status}
+    onChange={(e) => handleStatusChange(sprint.id, e.target.value)}
+    className="px-1 py-1  rounded focus:outline-none text-lg"
+    style={{ minWidth: 0 }}
+  >
+    {STATUS_OPTIONS.map(option => (
+      <option key={option} value={option}>{option}</option>
+    ))}
+  </select>
+</div>
+</td>
                   </tr>
                 ))}
               </tbody>
@@ -318,8 +377,9 @@ const TutorSprint = () => {
 
         {sprints.length === 0 && (
           <div className="text-center py-20">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">No students allocated yet</h3>
-            <p className="text-gray-600">Students will appear here once they complete their allocation and match with tutor sessions.</p>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">No students in current session</h3>
+            <p className="text-gray-600">Students will appear here only during their allocated session time and date.</p>
+            <p className="text-gray-500 mt-2">Current time: {new Date().toLocaleTimeString()} | Date: {new Date().toLocaleDateString('en-GB')}</p>
           </div>
         )}
       </div>

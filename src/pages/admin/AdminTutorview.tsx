@@ -58,7 +58,7 @@ const AdminTutorview = ({ setActiveLink }: AdminTutorviewProps) => {
     <div className="w-full h-full bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
       <div className="max-w-7xl mx-auto">
         
-        {/* Back Arrow */}
+        {/* Back Arrow
         <button 
           onClick={handleBack}
           className="absolute top-4 left-4 z-10 bg-white/80 backdrop-blur-lg border border-white/20 rounded-full p-3 shadow-lg hover:bg-white/90 transition-all duration-200"
@@ -67,7 +67,7 @@ const AdminTutorview = ({ setActiveLink }: AdminTutorviewProps) => {
           <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-        </button>
+        </button> */}
 
         {/* Tutor Info */}
         <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl p-6 mb-6">

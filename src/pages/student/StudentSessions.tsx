@@ -24,7 +24,7 @@ const StudentSessions = () => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionStudent[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 8;
+  const rowsPerPage = 10;
 
   useEffect(() => {
     // Load ALL session students from localStorage (all students who completed allocation)
@@ -83,19 +83,11 @@ const StudentSessions = () => {
   }, []);
 
   const handleViewReport = (session: SessionStudent) => {
-    // Store the selected session data for the report page
-    localStorage.setItem('selectedSessionForReport', JSON.stringify({
-      date: session.date,
-      session: session.session,
-      room: session.room,
-      subject: session.subject,
-      chapter: session.chapter
-    }));
-    // Set flag to show sidebar when coming from student context
-    localStorage.setItem('showStudentReportSidebar', 'true');
-    localStorage.setItem('reportNavigationSource', 'student');
+    const key = `${session.date}_${session.session}`;
+    localStorage.setItem('selectedSessionForReport', key);
     navigate('/student/report');
   };
+  
 
   // Pagination logic
   const totalItems = sessions.length;
@@ -103,7 +95,7 @@ const StudentSessions = () => {
 
   return (
     <div className="h-full bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
+      <div className="max-w-7xl mx-auto  flex-col">
         
         {/* Table Container */}
         <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden flex-1">

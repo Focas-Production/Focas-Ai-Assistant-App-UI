@@ -1,23 +1,44 @@
 import React, { useState } from "react";
 
 const ForgetPasswordPage: React.FC = () => {
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!/^\d{10}$/.test(phone)) {
+      setError("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    setError("");
     setLoading(true);
 
     setTimeout(() => {
       setLoading(false);
-      alert("Password reset link sent to your email!");
+      alert("Password reset link sent to your phone number!");
     }, 2000);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+
+    if (/^\d{0,10}$/.test(input)) {
+      setPhone(input);
+      if (input.length === 10) {
+        setError("");
+      } else {
+        setError("Phone number must be exactly 10 digits.");
+      }
+    }
   };
 
   return (
     <div className="relative min-h-screen flex justify-center items-center px-4 bg-[#f8f9fa]">
-
-      <div className="absolute inset-0 bg-white/30 backdrop-blur-xl z-0 pointer-events-none"
+      <div
+        className="absolute inset-0 bg-white/30 backdrop-blur-xl z-0 pointer-events-none"
         style={{
           backgroundImage: `
             linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
@@ -36,25 +57,31 @@ const ForgetPasswordPage: React.FC = () => {
         <h2 className="text-center text-[22px] font-medium text-gray-800 mb-1">
           Forgot Password
         </h2>
-        <p className="text-center text-sm text-gray-500 mb-8">
-          Enter your registered email address
+        <p className="text-center text-sm text-gray-500 mb-6">
+          Enter your registered phone number
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 bg-[#fafafa] text-sm transition"
+            type="tel"
+            placeholder="Phone number"
+            value={phone}
+            onChange={handleChange}
+            className={`w-full px-4 py-3 border ${error ? "border-red-500" : "border-gray-300"
+              } rounded-xl focus:outline-none focus:ring-2 ${error ? "focus:ring-red-100" : "focus:ring-blue-600"
+              } bg-[#fafafa] text-sm transition`}
+            required
           />
+          {error && (
+            <p className="text-sm text-red-600 -mt-3">{error}</p>
+          )}
 
           <button
             type="submit"
-            disabled={!email || loading}
+            disabled={phone.length !== 10 || loading}
             className={`w-full ${loading
-                ? "bg-blue-300 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
+              ? "bg-blue-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
               } text-white font-medium py-3 rounded-xl transition`}
           >
             {loading ? "Sending..." : "Send Reset Link"}
@@ -67,7 +94,6 @@ const ForgetPasswordPage: React.FC = () => {
             Back to Login
           </a>
         </p>
-
       </div>
     </div>
   );

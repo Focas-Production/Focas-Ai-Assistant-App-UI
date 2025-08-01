@@ -24,17 +24,24 @@ const AdminManagePeople: React.FC = () => {
   // Initialize people data from localStorage or use default data
   const [people, setPeople] = useState<Person[]>(() => {
     const savedPeople = localStorage.getItem('adminPeopleData');
+    // if (savedPeople) {
+    //   return JSON.parse(savedPeople);
+    // }
+    // return [
+    //   { id: 1, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
+    //   // { id: 2, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
+    //   // { id: 3, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
+    //   // { id: 4, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
+    //   // { id: 5, name: 'AAA', phoneNumber: 'XXXX', role: 'Admin' },
+    //   // { id: 6, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
+    // ];
     if (savedPeople) {
       return JSON.parse(savedPeople);
     }
     return [
-      { id: 1, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-      { id: 2, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
-      { id: 3, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-      { id: 4, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
-      { id: 5, name: 'AAA', phoneNumber: 'XXXX', role: 'Admin' },
-      { id: 6, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
+      { id: 1, name: 'John Doe', phoneNumber: '1234567890', role: 'Tutor' }
     ];
+    
   });
 
   // Save to localStorage whenever people data changes
@@ -125,56 +132,48 @@ const AdminManagePeople: React.FC = () => {
         {/* Table Container */}
         <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/30 bg-gray-100">
-                  <th className="text-left py-3 px-4 text-gray-700 font-semibold text-lg">Name</th>
-                  <th className="text-left py-3 px-4 text-gray-700 font-semibold text-lg">Phone Number</th>
-                  <th className="text-left py-3 px-4 text-gray-700 font-semibold text-lg">Role</th>
-                  <th className="text-left py-3 px-4 text-gray-700 font-semibold text-lg">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {people.map((person: Person, index: number) => (
-                  <tr 
-                    key={person.id} 
-                    className="border-b border-black/10 bg-white"
-                  >
-                    <td className="py-3 px-4 font-medium text-gray-800">
-                      {person.name}
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">
-                      {person.phoneNumber}
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">
-                      {person.role}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleEdit(person)}
-                          className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
-                          title="Edit"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(person.id)}
-                          className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
-                          title="Delete"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <table className="w-full table-fixed">
+  <thead>
+    <tr className="border-b border-white/30 bg-gray-100">
+      <th className="w-1/4 text-left py-4 px-4 text-blue-900 font-semibold text-lg">Name</th>
+      <th className="w-1/4 text-left py-3 px-4 text-blue-900 font-semibold text-lg">Phone Number</th>
+      <th className="w-1/4 text-left py-3 px-4 text-blue-900 font-semibold text-lg">Role</th>
+      <th className="w-1/4 text-left py-3 px-4 text-blue-900 font-semibold text-lg">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {people.map((person: Person) => (
+      <tr key={person.id} className="border-b border-black/10 bg-white">
+        <td className="w-1/4 py-3 px-4 font-medium text-gray-800">{person.name}</td>
+        <td className="w-1/4 py-3 px-4 text-gray-700">{person.phoneNumber}</td>
+        <td className="w-1/4 py-3 px-4 text-gray-700">{person.role}</td>
+        <td className="w-1/4 py-3 px-4">
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleEdit(person)}
+              className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
+              title="Edit"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleDelete(person.id)}
+              className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
+              title="Delete"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
           </div>
         </div>
 
@@ -249,6 +248,7 @@ const AdminManagePeople: React.FC = () => {
                       }`}
                       required
                     />
+                    
                     {showRoleOptions && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-blue-600 rounded-lg shadow-lg z-10">
                         <div className="py-1">

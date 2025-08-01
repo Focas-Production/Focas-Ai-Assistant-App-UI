@@ -26,57 +26,262 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
   const [currentSession, setCurrentSession] = useState<ChatHistory | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [activeLink, setActiveLink] = useState('Report');
+  const [userType, setUserType] = useState<'student' | 'tutor' | 'admin'>('student');
+  const [selectedSessionIndex, setSelectedSessionIndex] = useState<number>(-1);
+
+  // Helper function to generate unique session key
+  const generateSessionKey = (date: string, session: string, room: string) => {
+    return `studentChatHistory_${date}_${session}_${room}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  };
+
+  // Helper function to get all session keys
+  const getAllSessionKeys = () => {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('studentChatHistory_')) {
+        keys.push(key);
+      }
+    }
+    return keys;
+  };
+
+  // Helper function to parse session data from key
+  const parseSessionFromKey = (key: string) => {
+    const parts = key.replace('studentChatHistory_', '').split('_');
+    if (parts.length >= 3) {
+      const date = parts[0];
+      const session = parts[1];
+      const room = parts.slice(2).join('_'); // Room might contain underscores
+      return { date, session, room };
+    }
+    return null;
+  };
+
+  // Debug function to list all available sessions
+  const debugListAllSessions = () => {
+    const sessionKeys = getAllSessionKeys();
+    console.log('=== DEBUG: All Available Sessions ===');
+    sessionKeys.forEach((key, index) => {
+      const sessionData = localStorage.getItem(key);
+      if (sessionData) {
+        try {
+          const parsed = JSON.parse(sessionData);
+          console.log(`${index + 1}. Key: ${key}`);
+          console.log(`   Date: ${parsed.date}`);
+          console.log(`   Session: ${parsed.session}`);
+          console.log(`   Room: ${parsed.room}`);
+          console.log(`   Messages: ${parsed.messages?.length || 0}`);
+          console.log('---');
+        } catch (error) {
+          console.error(`Error parsing session ${key}:`, error);
+        }
+      }
+    });
+    console.log('=== END DEBUG ===');
+  };
+
+  // Test function to create sample sessions for testing
+  const createTestSessions = () => {
+    const testSessions = [
+      {
+        date: '2024-01-15',
+        session: '9:00 AM - 12:00 PM',
+        room: 'Room 101',
+        messages: [
+          { role: 'user', content: 'What is accounting?', timestamp: '2024-01-15 9:30:00' },
+          { role: 'assistant', content: 'Accounting is the process of recording financial transactions...', timestamp: '2024-01-15 9:30:05' }
+        ]
+      },
+      {
+        date: '2024-01-16',
+        session: '2:00 PM - 5:00 PM',
+        room: 'Room 102',
+        messages: [
+          { role: 'user', content: 'Explain taxation', timestamp: '2024-01-16 2:30:00' },
+          { role: 'assistant', content: 'Taxation is the process of collecting taxes...', timestamp: '2024-01-16 2:30:05' }
+        ]
+      }
+    ];
+
+    testSessions.forEach((session, index) => {
+      const key = generateSessionKey(session.date, session.session, session.room);
+      localStorage.setItem(key, JSON.stringify(session));
+      console.log(`Created test session ${index + 1}:`, key);
+    });
+
+    // Reload the component
+    window.location.reload();
+  };
+
+  // Determine navigation source and user type
+  useEffect(() => {
+    const navigationSource = localStorage.getItem('reportNavigationSource');
+    const userInfo = localStorage.getItem('userInfo');
+    
+    if (navigationSource === 'tutor') {
+      setUserType('tutor');
+    } else if (navigationSource === 'admin') {
+      setUserType('admin');
+    } else {
+      // Default to student if no navigation source or from student context
+      setUserType('student');
+    }
+    
+    // Also check userInfo to determine user type
+    if (userInfo) {
+      const user = JSON.parse(userInfo);
+      if (user.role) {
+        setUserType(user.role);
+      }
+    }
+  }, []);
 
   // Determine if sidebar should be shown - default to true for student context
+  // But if we're in tutor or admin context, don't show the component's own sidebar
   const shouldShowSidebar = showSidebar !== undefined ? showSidebar : 
-    localStorage.getItem('showStudentReportSidebar') !== 'false';
+    (userType === 'student' && localStorage.getItem('showStudentReportSidebar') !== 'false');
 
   useEffect(() => {
-    // Load chat history from localStorage
-    const savedHistory = localStorage.getItem('studentChatHistory');
-    if (savedHistory) {
-      const history = JSON.parse(savedHistory);
-      setChatHistory(history);
-      
-      // Check if there's a selected session from the sessions page
-      const selectedSession = localStorage.getItem('selectedSessionForReport');
-      if (selectedSession) {
+    // Load all chat history sessions from localStorage
+    const sessionKeys = getAllSessionKeys();
+    const allHistory: ChatHistory[] = [];
+    
+    sessionKeys.forEach(key => {
+      const sessionData = localStorage.getItem(key);
+      if (sessionData) {
+        try {
+          const parsedData = JSON.parse(sessionData);
+          if (parsedData && parsedData.messages) {
+            allHistory.push(parsedData);
+          }
+        } catch (error) {
+          console.error('Error parsing session data:', error);
+        }
+      }
+    });
+    
+    // Sort by date and time (most recent first)
+    allHistory.sort((a, b) => {
+      const dateA = new Date(a.date + ' ' + a.session);
+      const dateB = new Date(b.date + ' ' + b.session);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    setChatHistory(allHistory);
+    
+    // Debug: List all available sessions
+    debugListAllSessions();
+    
+    // Check if there's a selected session from the sessions page
+    const selectedSession = localStorage.getItem('selectedSessionForReport');
+    if (selectedSession) {
+      try {
         const sessionData = JSON.parse(selectedSession);
         console.log('Selected session data:', sessionData);
-        console.log('Available chat history sessions:', history);
         
-        // Find the specific session in chat history - match by date, session, and room
-        const currentSessionData = history.find((session: ChatHistory) => {
-          const dateMatch = session.date === sessionData.date;
-          const sessionMatch = session.session === sessionData.session;
-          const roomMatch = session.room === sessionData.room;
-          
-          console.log('Matching session:', {
-            sessionDate: session.date,
-            selectedDate: sessionData.date,
-            dateMatch,
-            sessionTime: session.session,
-            selectedTime: sessionData.session,
-            sessionMatch,
-            sessionRoom: session.room,
-            selectedRoom: sessionData.room,
-            roomMatch
+                // Validate session data
+        if (!sessionData || !sessionData.date || !sessionData.session || !sessionData.room) {
+          console.error('Invalid session data:', sessionData);
+          setCurrentSession(null);
+          return;
+        }
+        
+        // Generate the unique key for this session
+        const sessionKey = generateSessionKey(sessionData.date, sessionData.session, sessionData.room);
+        console.log('Looking for session with key:', sessionKey);
+        
+        // Try to find the session in localStorage
+        const savedSessionData = localStorage.getItem(sessionKey);
+        if (savedSessionData) {
+          try {
+            const currentSessionData = JSON.parse(savedSessionData);
+            console.log('Found session in localStorage:', currentSessionData);
+            setCurrentSession(currentSessionData);
+            // Find the index in chatHistory for the dropdown
+            const index = allHistory.findIndex(session => 
+              session.date === currentSessionData.date && 
+              session.session === currentSessionData.session && 
+              session.room === currentSessionData.room
+            );
+            setSelectedSessionIndex(index);
+          } catch (error) {
+            console.error('Error parsing selected session data:', error);
+          }
+        } else {
+          console.log('Session not found in localStorage, checking all history...');
+          // Fallback: try to find in allHistory with more flexible matching
+          const foundSession = allHistory.find((session: ChatHistory) => {
+            // Normalize date formats for comparison
+            const normalizeDate = (dateStr: string | undefined) => {
+              // Handle undefined or null values
+              if (!dateStr) return '';
+              
+              // Handle different date formats (DD/MM/YYYY, YYYY-MM-DD, etc.)
+              if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                  // Convert DD/MM/YYYY to YYYY-MM-DD
+                  return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+              }
+              return dateStr;
+            };
+            
+            const normalizedSessionDate = normalizeDate(session.date);
+            const normalizedSelectedDate = normalizeDate(sessionData.date);
+            
+            const dateMatch = normalizedSessionDate === normalizedSelectedDate;
+            const sessionMatch = session.session === sessionData.session;
+            const roomMatch = session.room === sessionData.room;
+            
+            // Additional safety checks
+            if (!session.date || !sessionData.date) {
+              console.log('Missing date in session data:', { session, sessionData });
+              return false;
+            }
+            
+            console.log('Matching session:', {
+              sessionDate: session.date,
+              normalizedSessionDate,
+              selectedDate: sessionData.date,
+              normalizedSelectedDate,
+              dateMatch,
+              sessionTime: session.session,
+              selectedTime: sessionData.session,
+              sessionMatch,
+              sessionRoom: session.room,
+              selectedRoom: sessionData.room,
+              roomMatch
+            });
+            
+            return dateMatch && sessionMatch && roomMatch;
           });
           
-          return dateMatch && sessionMatch && roomMatch;
-        });
-        
-        console.log('Found session in history:', currentSessionData);
-        setCurrentSession(currentSessionData || null);
+          console.log('Found session in history:', foundSession);
+          setCurrentSession(foundSession || null);
+          if (foundSession) {
+            // Find the index in chatHistory for the dropdown
+            const index = allHistory.findIndex(session => 
+              session.date === foundSession.date && 
+              session.session === foundSession.session && 
+              session.room === foundSession.room
+            );
+            setSelectedSessionIndex(index);
+          }
+        }
         
         // Clear the selected session after using it
         localStorage.removeItem('selectedSessionForReport');
-      } else {
-        // If no specific session selected, show the most recent session
-        if (history.length > 0) {
-          setCurrentSession(history[history.length - 1]);
-        }
+      } catch (error) {
+        console.error('Error processing selected session:', error);
+        setCurrentSession(null);
       }
+    } else {
+      // If no specific session selected, DON'T show any session by default
+      // This prevents showing the wrong session
+      console.log('No specific session selected, not showing any session by default');
+      setCurrentSession(null);
     }
   }, []);
 
@@ -122,23 +327,58 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
 
   const handleLogout = () => {
     localStorage.removeItem('userInfo');
-    localStorage.removeItem('studentAllocationData');
-    localStorage.removeItem('studentAllocationCompleted');
-    localStorage.removeItem('studentSkipAllocation');
-    localStorage.removeItem('studentActiveLink');
+    
+    // Clear user-specific data based on user type
+    if (userType === 'student') {
+      localStorage.removeItem('studentAllocationData');
+      localStorage.removeItem('studentAllocationCompleted');
+      localStorage.removeItem('studentSkipAllocation');
+      localStorage.removeItem('studentActiveLink');
+    } else if (userType === 'tutor') {
+      localStorage.removeItem('tutorActiveLink');
+    } else if (userType === 'admin') {
+      localStorage.removeItem('adminActiveLink');
+    }
+    
+    // Clear navigation source
+    localStorage.removeItem('reportNavigationSource');
+    
     window.location.href = '/login';
   };
 
   const handleSidebarClick = (link: string) => {
     setActiveLink(link);
-    if (link === 'Dashboard') {
-      window.location.href = '/student';
-    } else if (link === 'AI Assistant') {
-      window.location.href = '/student';
-    } else if (link === 'Sessions') {
-      window.location.href = '/student';
-    } else if (link === 'Allocation') {
-      window.location.href = '/student';
+    
+    // Navigate based on user type
+    if (userType === 'tutor') {
+      if (link === 'Dashboard') {
+        window.location.href = '/tutor';
+      } else if (link === 'Sprint') {
+        window.location.href = '/tutor/sprint';
+      } else if (link === 'Sessions') {
+        window.location.href = '/tutor/sessions';
+      } else if (link === 'Students') {
+        window.location.href = '/tutor/students';
+      }
+    } else if (userType === 'admin') {
+      if (link === 'Dashboard') {
+        window.location.href = '/admin';
+      } else if (link === 'Manage People') {
+        window.location.href = '/admin/manage-people';
+      } else if (link === 'Reports') {
+        window.location.href = '/admin/reports';
+      }
+    } else {
+      // Student navigation
+      if (link === 'Dashboard') {
+        window.location.href = '/student';
+      } else if (link === 'AI Assistant') {
+        window.location.href = '/student';
+      } else if (link === 'Sessions') {
+        window.location.href = '/student';
+      } else if (link === 'Allocation') {
+        window.location.href = '/student';
+      }
     }
   };
 
@@ -299,7 +539,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     <div className={`${shouldShowSidebar ? 'flex h-screen' : 'h-full'} bg-gradient-to-br from-gray-100 via-white to-blue-50 font-inter`}>
       {shouldShowSidebar && (
         <Sidebar 
-          variant="student" 
+          variant={userType} 
           collapsed={collapsed} 
           setCollapsed={setCollapsed} 
           activeLink={activeLink} 
@@ -309,16 +549,16 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       )}
       
       <div className={`flex-1 transition-all duration-500 ${shouldShowSidebar ? (collapsed ? 'ml-20' : 'ml-72') : ''} relative`}>
-        {/* Back Button - positioned on top of navbar */}
+        {/* Back Button - positioned on top of navbar
         <button
           onClick={handleBackToSessions}
           className="absolute top-2 left-4 z-20 bg-white/90 backdrop-blur-lg border border-white/20 rounded-full p-3 shadow-lg hover:bg-white transition-all duration-200"
           aria-label="Back to Sessions"
         >
           <ArrowLeft className="w-5 h-5 text-gray-700" />
-        </button>
+        </button> */}
         
-        {shouldShowSidebar && <Navbar userType="student" activeLink={activeLink} />}
+        {shouldShowSidebar && <Navbar userType={userType} activeLink={activeLink} />}
         
         <main className="overflow-auto h-full bg-white/60 backdrop-blur-md relative">
           
@@ -330,6 +570,51 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                 <h1 className="text-3xl font-bold text-blue-700 mb-2">Student Report</h1>
                 <p className="text-slate-600">View your AI assistant interactions and chat history</p>
               </div> */}
+
+              {/* Session Selector */}
+              {chatHistory.length > 0 && (
+                <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Select Session</h3>
+                      <p className="text-sm text-gray-600">Choose which session to view</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <select
+                        value={selectedSessionIndex}
+                        onChange={(e) => {
+                          const index = parseInt(e.target.value);
+                          setSelectedSessionIndex(index);
+                          if (index >= 0 && index < chatHistory.length) {
+                            setCurrentSession(chatHistory[index]);
+                          } else {
+                            setCurrentSession(null);
+                          }
+                        }}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value={-1}>Select a session...</option>
+                        {chatHistory.map((session, index) => (
+                          <option key={index} value={index}>
+                            {session.date} - {session.session} - {session.room} ({session.messages.length} messages)
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {/* Debug button - only show in development */}
+                      {import.meta.env.DEV && (
+                        <button
+                          onClick={createTestSessions}
+                          className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded-lg"
+                          title="Create test sessions for debugging"
+                        >
+                          Test Sessions
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Tab Navigation */}
               <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden mb-6">
@@ -440,9 +725,14 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                   ) : (
                     <div className="p-12 text-center">
                       <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-gray-600 mb-2">No Chat Report Available</h3>
+                      <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                        {chatHistory.length > 0 ? 'No Session Selected' : 'No Chat Report Available'}
+                      </h3>
                       <p className="text-gray-500">
-                        Start a conversation with the AI Assistant to generate a report for your current session.
+                        {chatHistory.length > 0 
+                          ? 'Please select a session from the dropdown above to view its report.'
+                          : 'Start a conversation with the AI Assistant to generate a report for your current session.'
+                        }
                       </p>
                     </div>
                   )}
@@ -496,11 +786,16 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                     ) : (
                       <div className="text-center py-12">
                         <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-600 mb-2">No Chat History</h3>
+                        <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                          {chatHistory.length > 0 ? 'No Session Selected' : 'No Chat History'}
+                        </h3>
                         <p className="text-gray-500">
-                          {currentSession ? 
-                            "No messages found for this session. Start a conversation with the AI Assistant to see chat history." :
-                            "Select a session to view its chat history."
+                          {chatHistory.length > 0 
+                            ? 'Please select a session from the dropdown above to view its chat history.'
+                            : (currentSession ? 
+                                "No messages found for this session. Start a conversation with the AI Assistant to see chat history." :
+                                "Select a session to view its chat history."
+                              )
                           }
                         </p>
                       </div>

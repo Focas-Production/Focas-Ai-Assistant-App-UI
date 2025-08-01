@@ -73,7 +73,7 @@ const AdminLayout: React.FC = () => {
             <Route path="/student-view/:studentId" element={<AdminStudentview setActiveLink={setActiveLink} />} />
             <Route path="/tutor-view/:tutorId" element={<AdminTutorview setActiveLink={setActiveLink} />} />
             <Route path="/tutor-session-view/:sessionId" element={<TutorSessionview />} />
-            <Route path="/student-report" element={<StudentReport showSidebar={false} />} />
+            <Route path="/student-report" element={<StudentReport />} />
           </Routes>
         </main>
       </div>
