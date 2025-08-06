@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, Paperclip, Sparkles } from 'lucide-react';
+import { sessionManager } from '../../utils/sessionManager';
+import type { ChatMessage } from '../../utils/sessionManager';
 
 interface Message {
   id: string;
@@ -27,18 +29,12 @@ const StudentAI: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Helper function to generate unique session key
-  const generateSessionKey = (date: string, session: string, room: string) => {
-    return `studentChatHistory_${date}_${session}_${room}`.replace(/[^a-zA-Z0-9_]/g, '_');
-  };
-
   // Load existing chat history for current session and get current topic
   useEffect(() => {
-    const allocationData = localStorage.getItem('studentAllocationData');
+    const currentSession = sessionManager.getCurrentSession();
     const userInfo = localStorage.getItem('userInfo');
     
-    if (allocationData && userInfo) {
-      const data = JSON.parse(allocationData);
+    if (currentSession && userInfo) {
       const user = JSON.parse(userInfo);
       
       // Get current topic from sprintData
@@ -53,31 +49,24 @@ const StudentAI: React.FC = () => {
         console.log('No specific topic allocated yet');
       }
       
-      // Generate unique session key
-      const sessionKey = generateSessionKey(data.date, data.session, data.room);
-      console.log('Loading chat history for session key:', sessionKey);
+      console.log('Loading chat history for session ID:', currentSession.sessionId);
       
-      // Load session-specific chat history
-      const savedSessionData = localStorage.getItem(sessionKey);
-      if (savedSessionData) {
-        try {
-          const sessionData = JSON.parse(savedSessionData);
-          console.log('Found existing session data:', sessionData);
-          
-          // Convert saved messages to Message format
-          const loadedMessages = sessionData.messages.map((msg: any) => ({
-            id: msg.id || Date.now().toString(),
-            sender: msg.role === 'user' ? 'user' : 'ai',
-            text: msg.content,
-            timestamp: new Date(msg.timestamp),
-            file: msg.file
-          }));
-          setMessages(loadedMessages);
-        } catch (error) {
-          console.error('Error parsing session data:', error);
-        }
+      // Load session-specific chat history from session manager
+      const evaluation = sessionManager.getEvaluation(currentSession.sessionId);
+      if (evaluation && evaluation.messages) {
+        console.log('Found existing session messages:', evaluation.messages);
+        
+        // Convert saved messages to Message format
+        const loadedMessages: Message[] = evaluation.messages.map((msg: ChatMessage) => ({
+          id: msg.id || Date.now().toString(),
+          sender: msg.role === 'user' ? 'user' : 'ai',
+          text: msg.content,
+          timestamp: new Date(msg.timestamp),
+          file: msg.file
+        }));
+        setMessages(loadedMessages);
       } else {
-        console.log('No existing session found, starting fresh');
+        console.log('No existing session messages found, starting fresh');
       }
     }
   }, []);
@@ -111,13 +100,14 @@ const StudentAI: React.FC = () => {
 
   // Save chat history whenever messages change
   const saveChatHistory = (updatedMessages: Message[]) => {
-    const allocationData = localStorage.getItem('studentAllocationData');
-    if (!allocationData) return;
+    const currentSession = sessionManager.getCurrentSession();
+    if (!currentSession) {
+      console.error('No active session found');
+      return;
+    }
 
-    const data = JSON.parse(allocationData);
-    
-    // Convert messages to the format expected by StudentReport
-    const sessionMessages = updatedMessages.map(msg => ({
+    // Convert messages to the format expected by session manager
+    const sessionMessages: ChatMessage[] = updatedMessages.map(msg => ({
       id: msg.id,
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.text,
@@ -125,32 +115,13 @@ const StudentAI: React.FC = () => {
       file: msg.file
     }));
 
-    // Generate unique session key
-    const sessionKey = generateSessionKey(data.date, data.session, data.room);
-    console.log('Saving chat history for session key:', sessionKey);
-
-    // Create session data object
-    const sessionData = {
-      date: data.date,
-      session: data.session,
-      room: data.room,
+    // Always get the latest evaluation (score/feedback if any)
+    const existingEvaluation = sessionManager.getEvaluation(currentSession.sessionId);
+    sessionManager.saveEvaluation({
+      score: existingEvaluation ? existingEvaluation.score : 0,
+      feedback: existingEvaluation ? existingEvaluation.feedback : 'Session in progress',
       messages: sessionMessages
-    };
-
-    // Save session-specific data
-    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
-    console.log('Saved session data:', sessionData);
-    console.log('Session key used:', sessionKey);
-    
-    // Debug: List all sessions after saving
-    const allKeys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('studentChatHistory_')) {
-        allKeys.push(key);
-      }
-    }
-    console.log('All session keys after saving:', allKeys);
+    });
   };
 
   // Save messages whenever they change
@@ -304,30 +275,24 @@ const StudentAI: React.FC = () => {
       const scoreMatch = aiResponseText.match(/📊 Score:\s*(\d+)\/10/);
       if (scoreMatch) {
         const score = scoreMatch[1];
-        const allocationData = localStorage.getItem('studentAllocationData');
-        const userInfo = localStorage.getItem('userInfo');
-        
-        if (allocationData && userInfo) {
-          const data = JSON.parse(allocationData);
-          const user = JSON.parse(userInfo);
-          
-          const scoreData = {
-            studentName: user.name || 'Student',
-            date: data.date,
-            session: data.session,
-            room: data.room,
+        const currentSession = sessionManager.getCurrentSession();
+        if (currentSession) {
+          // Always use the latest messages for this session
+          // Only use Message[]
+          const allMessages: Message[] = [...messages, aiResponse];
+          const sessionMessages: ChatMessage[] = allMessages.map(msg => ({
+            id: msg.id,
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text,
+            timestamp: msg.timestamp.toLocaleString(),
+            file: msg.file
+          }));
+          sessionManager.saveEvaluation({
             score: parseInt(score),
-            timestamp: new Date().toISOString()
-          };
-          
-          console.log('Saving score data:', scoreData);
-          
-          // Save score data
-          const existingScores = JSON.parse(localStorage.getItem('studentScores') || '[]');
-          existingScores.push(scoreData);
-          localStorage.setItem('studentScores', JSON.stringify(existingScores));
-          
-          console.log('Updated studentScores:', existingScores);
+            feedback: 'Evaluation complete',
+            messages: sessionMessages
+          });
+          console.log('Score saved for session ID:', currentSession.sessionId);
         }
       }
     } catch (error) {
@@ -433,30 +398,25 @@ const StudentAI: React.FC = () => {
       const scoreMatch = aiResponseText.match(/📊 Score:\s*(\d+)\/10/);
       if (scoreMatch) {
         const score = scoreMatch[1];
-        const allocationData = localStorage.getItem('studentAllocationData');
-        const userInfo = localStorage.getItem('userInfo');
-        
-        if (allocationData && userInfo) {
-          const data = JSON.parse(allocationData);
-          const user = JSON.parse(userInfo);
-          
-          const scoreData = {
-            studentName: user.name || 'Student',
-            date: data.date,
-            session: data.session,
-            room: data.room,
+        const currentSession = sessionManager.getCurrentSession();
+        if (currentSession) {
+          // Always use the latest messages for this session
+          const allMessages: Message[] = [...messages, aiResponse];
+          // Type guard: filter only Message objects
+          const onlyMessages: Message[] = allMessages.filter((msg): msg is Message => typeof msg.sender === 'string' && typeof msg.text === 'string');
+          const sessionMessages: ChatMessage[] = onlyMessages.map(msg => ({
+            id: msg.id,
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text,
+            timestamp: msg.timestamp.toLocaleString(),
+            file: msg.file
+          }));
+          sessionManager.saveEvaluation({
             score: parseInt(score),
-            timestamp: new Date().toISOString()
-          };
-          
-          console.log('Saving score data:', scoreData);
-          
-          // Save score data
-          const existingScores = JSON.parse(localStorage.getItem('studentScores') || '[]');
-          existingScores.push(scoreData);
-          localStorage.setItem('studentScores', JSON.stringify(existingScores));
-          
-          console.log('Updated studentScores:', existingScores);
+            feedback: 'Evaluation complete',
+            messages: sessionMessages
+          });
+          console.log('Score saved for session ID:', currentSession.sessionId);
         }
       }
     } catch (error) {

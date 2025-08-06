@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { sessionManager } from '../../utils/sessionManager';
 
 interface AllocationData {
   subject: string;
@@ -77,6 +78,18 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
       };
       
       localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
+
+      // Start a new session using the session manager
+      const newSession = sessionManager.startSession({
+        studentName,
+        date: currentDate,
+        session,
+        room,
+        subject,
+        chapter
+      });
+
+      console.log('Started new session with ID:', newSession.sessionId);
 
       onSubmit?.({
         subject,
