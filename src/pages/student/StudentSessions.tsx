@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Pagination from '../../components/common/Pagination';
-
-interface AllocationData {
-  subject: string;
-  chapter: string;
-  session: string;
-  room: string;
-  date?: string;
-}
+import { sessionManager } from '../../utils/sessionManager';
 
 interface SessionStudent {
   id: number;
@@ -18,6 +11,7 @@ interface SessionStudent {
   session: string;
   room: string;
   date: string;
+  sessionId?: string; // Add session ID for direct navigation
 }
 
 const StudentSessions = () => {
@@ -27,65 +21,120 @@ const StudentSessions = () => {
   const rowsPerPage = 10;
 
   useEffect(() => {
-    // Load ALL session students from localStorage (all students who completed allocation)
-    const sessionStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
-    console.log('Raw session students from localStorage:', sessionStudents);
+    // Get user info to find student sessions
+    const userInfo = localStorage.getItem('userInfo');
+    if (!userInfo) return;
+
+    const user = JSON.parse(userInfo);
     
-    if (sessionStudents.length > 0) {
-      // Remove duplicates based on date, session, and room combination
-      const uniqueSessions = new Map();
-      
-      sessionStudents.forEach((student: SessionStudent) => {
-        const key = `${student.date}-${student.session}-${student.room}`;
-        console.log('Processing student:', student.name, 'with key:', key, 'date:', student.date);
-        if (!uniqueSessions.has(key)) {
-          uniqueSessions.set(key, {
-            id: student.id,
-            name: student.name,
-            subject: student.subject,
-            chapter: student.chapter,
-            session: student.session,
-            room: student.room,
-            date: student.date || new Date().toLocaleDateString('en-GB')
-          });
-        } else {
-          console.log('Duplicate found for key:', key, 'skipping...');
+    // Get all sessions from session manager
+    const allSessions = sessionManager.getAllSessions();
+    
+    // Filter sessions for current student
+    const studentSessions = allSessions.filter(session => 
+      session.studentName === user.name
+    );
+
+    if (studentSessions.length > 0) {
+      // Convert to SessionStudent format
+      const formattedSessions: SessionStudent[] = studentSessions.map(session => ({
+        id: parseInt(session.sessionId.split('_')[1]), // Use timestamp part as ID
+        name: session.studentName,
+        subject: session.subject,
+        chapter: session.chapter,
+        session: session.session,
+        room: session.room,
+        date: session.date,
+        sessionId: session.sessionId
+      }));
+
+      // Remove duplicates by composite key: date+session+room+name
+      const uniqueSessionsMap = new Map<string, SessionStudent>();
+      formattedSessions.forEach(sess => {
+        const key = `${sess.date}_${sess.session}_${sess.room}_${sess.name}`;
+        if (!uniqueSessionsMap.has(key)) {
+          uniqueSessionsMap.set(key, sess);
         }
       });
+      const uniqueSessions = Array.from(uniqueSessionsMap.values());
 
-      // Convert to array and sort by date (newest first)
-      const formattedSessions = Array.from(uniqueSessions.values())
-        .sort((a: SessionStudent, b: SessionStudent) => {
-          const dateA = new Date(a.date.split('/').reverse().join('-'));
-          const dateB = new Date(b.date.split('/').reverse().join('-'));
-          return dateB.getTime() - dateA.getTime();
+      // Sort by date (newest first)
+      uniqueSessions.sort((a, b) => {
+        const dateA = new Date(a.date.split('/').reverse().join('-'));
+        const dateB = new Date(b.date.split('/').reverse().join('-'));
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      console.log('Student sessions loaded:', uniqueSessions);
+      setSessions(uniqueSessions);
+    } else {
+      // Fallback to legacy session students data
+      const sessionStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
+      console.log('Raw session students from localStorage:', sessionStudents);
+      
+      if (sessionStudents.length > 0) {
+        // Remove duplicates by composite key: date+session+room+name
+        const uniqueSessions = new Map();
+        
+        sessionStudents.forEach((student: SessionStudent) => {
+          const key = `${student.date}-${student.session}-${student.room}-${student.name}`;
+          console.log('Processing student:', student.name, 'with key:', key, 'date:', student.date);
+          if (!uniqueSessions.has(key)) {
+            uniqueSessions.set(key, {
+              id: student.id,
+              name: student.name,
+              subject: student.subject,
+              chapter: student.chapter,
+              session: student.session,
+              room: student.room,
+              date: student.date || new Date().toLocaleDateString('en-GB')
+            });
+          } else {
+            console.log('Duplicate found for key:', key, 'skipping...');
+          }
         });
 
-      console.log('Final formatted sessions:', formattedSessions);
-      setSessions(formattedSessions);
-    } else {
-      // Fallback to current user's allocation data if no session students exist
-      const allocationData = localStorage.getItem('studentAllocationData');
-      if (allocationData) {
-        const data = JSON.parse(allocationData);
-        const sessionData = {
-          id: Date.now(),
-          name: 'Current Student',
-          subject: data.subject,
-          chapter: data.chapter,
-          session: data.session,
-          room: data.room,
-          date: data.date || new Date().toLocaleDateString('en-GB')
-        };
-        setSessions([sessionData]);
+        // Convert to array and sort by date (newest first)
+        const formattedSessions = Array.from(uniqueSessions.values())
+          .sort((a: SessionStudent, b: SessionStudent) => {
+            const dateA = new Date(a.date.split('/').reverse().join('-'));
+            const dateB = new Date(b.date.split('/').reverse().join('-'));
+            return dateB.getTime() - dateA.getTime();
+          });
+
+        console.log('Final formatted sessions:', formattedSessions);
+        setSessions(formattedSessions);
+      } else {
+        // Fallback to current user's allocation data if no session students exist
+        const allocationData = localStorage.getItem('studentAllocationData');
+        if (allocationData) {
+          const data = JSON.parse(allocationData);
+          const sessionData = {
+            id: Date.now(),
+            name: 'Current Student',
+            subject: data.subject,
+            chapter: data.chapter,
+            session: data.session,
+            room: data.room,
+            date: data.date || new Date().toLocaleDateString('en-GB')
+          };
+          setSessions([sessionData]);
+        }
       }
     }
   }, []);
 
   const handleViewReport = (session: SessionStudent) => {
-    const key = `${session.date}_${session.session}`;
-    localStorage.setItem('selectedSessionForReport', key);
-    navigate('/student/report');
+    if (session.sessionId) {
+      // Use session ID for direct navigation
+      localStorage.setItem('selectedSessionId', session.sessionId);
+      navigate('/student/report');
+    } else {
+      // Fallback to legacy method
+      const key = `${session.date}_${session.session}`;
+      localStorage.setItem('selectedSessionForReport', key);
+      navigate('/student/report');
+    }
   };
   
 

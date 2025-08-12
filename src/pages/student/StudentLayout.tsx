@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    clearStudentData: () => void;
+    checkStudentData: () => void;
+  }
+}
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 import StudentDashboard from '../student/StudentDashboard';
@@ -103,8 +109,8 @@ const StudentLayout: React.FC = () => {
 
   // Expose functions to window for testing
   useEffect(() => {
-    (window as any).clearStudentData = clearStudentData;
-    (window as any).checkStudentData = checkStudentData;
+  (window as Window & typeof globalThis).clearStudentData = clearStudentData;
+  (window as Window & typeof globalThis).checkStudentData = checkStudentData;
   }, []);
 
   const handleAllocationSubmit = (data: AllocationData) => {

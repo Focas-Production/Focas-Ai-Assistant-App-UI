@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Routes, Route, useLocation } from 'react-router-dom';
+import { useNavigate, Routes, Route } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import TutorSession from './TutorSession';
 import Sprint from './TutorSprint';

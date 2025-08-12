@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import Pagination from '../../components/common/Pagination';
+import { sessionManager } from '../../utils/sessionManager';
 
 interface SprintData {
   id: number;
@@ -28,64 +28,99 @@ interface SessionStudent {
 
 const TutorSprint = () => {
   const [sprints, setSprints] = useState<SprintData[]>([]);
-  const [sessionStudents, setSessionStudents] = useState<SessionStudent[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 8;
 
   const TOPIC_OPTIONS = ["Company Accounts", "Profit and Loss", "Accouting standards"];
   const STATUS_OPTIONS = ["pending", "completed", "come to live"];
 
-  // Function to check if current time and date match student's session
+  // Check if current time falls within a session time slot
   const isCurrentTimeAndDateInSession = (sessionTime: string, sessionDate: string): boolean => {
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
-    
-    // Get current date in DD/MM/YYYY format
     const currentDate = now.toLocaleDateString('en-GB');
-
-    // Check if dates match
-    if (sessionDate !== currentDate) {
+    
+    // Check if date matches
+    if (currentDate !== sessionDate) {
       return false;
     }
-
-    // Parse session time ranges
-    const sessionRanges: { [key: string]: { start: number; end: number } } = {
-      '6am - 9am': { start: 6 * 60, end: 9 * 60 }, // 6:00 AM to 9:00 AM
-      '10am - 1pm': { start: 10 * 60, end: 13 * 60 }, // 10:00 AM to 1:00 PM
-      '2pm - 5pm': { start: 14 * 60, end: 17 * 60 }, // 2:00 PM to 5:00 PM
-      '7pm - 10pm': { start: 19 * 60, end: 22 * 60 }, // 7:00 PM to 10:00 PM
-    };
-
-    const range = sessionRanges[sessionTime];
-    if (!range) return false;
-
-    return currentTimeInMinutes >= range.start && currentTimeInMinutes <= range.end;
+    
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTime = currentHour * 60 + currentMinute; // Convert to minutes
+    
+    // Parse session time
+    const timeMatch = sessionTime.match(/(\d+)(?::\d+)?\s*(am|pm)\s*-\s*(\d+)(?::\d+)?\s*(am|pm)/i);
+    if (!timeMatch) return false;
+    
+    const startHour = parseInt(timeMatch[1]);
+    const startPeriod = timeMatch[2].toLowerCase();
+    const endHour = parseInt(timeMatch[3]);
+    const endPeriod = timeMatch[4].toLowerCase();
+    
+    // Convert to 24-hour format
+    const startTime24 = startPeriod === 'pm' && startHour !== 12 ? startHour + 12 : startHour;
+    const endTime24 = endPeriod === 'pm' && endHour !== 12 ? endHour + 12 : endHour;
+    
+    const sessionStartMinutes = startTime24 * 60;
+    const sessionEndMinutes = endTime24 * 60;
+    
+    return currentTime >= sessionStartMinutes && currentTime <= sessionEndMinutes;
   };
 
   // Load students from localStorage and filter by current session time
   useEffect(() => {
-    const students = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
+    // First try to get students from session manager
+    const allSessions = sessionManager.getAllSessions();
     
-    // Filter students based on current time and date matching their session
-    const filteredStudents = students.filter((student: SessionStudent) => {
-      return isCurrentTimeAndDateInSession(student.session, student.date);
-    });
-    
-    setSessionStudents(filteredStudents);
-    
-    // Initialize sprints only for students in current session time
-    const initialSprints = filteredStudents.map((student: SessionStudent) => ({
-      id: student.id,
-      name: student.name,
-      topic: "Topic 1",
-      timer: { isRunning: false, time: 0, startTime: null, duration: 5 },
-      feedback: "Session in progress",
-      status: "pending"
-    }));
-    
-    setSprints(initialSprints);
+    if (allSessions.length > 0) {
+      // Filter sessions based on current time and date
+      const currentSessions = allSessions.filter(session => 
+        isCurrentTimeAndDateInSession(session.session, session.date)
+      );
+      
+      // Convert to SessionStudent format
+      const currentStudents: SessionStudent[] = currentSessions.map(session => ({
+        id: parseInt(session.sessionId.split('_')[1]), // Use timestamp part as ID
+        name: session.studentName,
+        subject: session.subject,
+        chapter: session.chapter,
+        session: session.session,
+        room: session.room,
+        date: session.date
+      }));
+      
+      
+      // Initialize sprints for current students
+      const initialSprints = currentStudents.map(student => ({
+        id: student.id,
+        name: student.name,
+        topic: "Topic 1",
+        timer: { isRunning: false, time: 0, startTime: null, duration: 5 },
+        feedback: "Session in progress",
+        status: "pending"
+      }));
+      
+      setSprints(initialSprints);
+    } else {
+      // Fallback to legacy session students data
+      const students = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
+      
+      // Filter students based on current time and date matching their session
+      const filteredStudents = students.filter((student: SessionStudent) => {
+        return isCurrentTimeAndDateInSession(student.session, student.date);
+      });
+      
+      
+      // Initialize sprints only for students in current session time
+      const initialSprints = filteredStudents.map((student: SessionStudent) => ({
+        id: student.id,
+        name: student.name,
+        topic: "Topic 1",
+        timer: { isRunning: false, time: 0, startTime: null, duration: 5 },
+        feedback: "Session in progress",
+        status: "pending"
+      }));
+      
+      setSprints(initialSprints);
+    }
   }, []);
 
   // Timer functionality
@@ -131,38 +166,38 @@ const TutorSprint = () => {
     localStorage.setItem('sprintData', JSON.stringify(sprints));
   }, [sprints]);
 
-  // Load AI scores from localStorage and update feedback
+  // Load AI scores from session manager and update feedback
   useEffect(() => {
     const updateScores = () => {
-      const savedScores = localStorage.getItem('studentScores');
-      if (savedScores) {
-        const scores = JSON.parse(savedScores);
-        console.log('Loading scores from localStorage:', scores);
-        
-        setSprints(prevSprints => 
-          prevSprints.map(sprint => {
-            // Find the latest score for this student
-            const studentScores = scores.filter((score: any) => score.studentName === sprint.name);
-            console.log(`Scores for student ${sprint.name}:`, studentScores);
+      // Get all evaluations from session manager
+      const allEvaluations = sessionManager.getAllEvaluations();
+      console.log('Loading evaluations from session manager:', allEvaluations);
+      
+      setSprints(prevSprints => 
+        prevSprints.map(sprint => {
+          // Find evaluations for this student
+          const studentEvaluations = allEvaluations.filter(evaluation => 
+            evaluation.studentName === sprint.name
+          );
+          console.log(`Evaluations for student ${sprint.name}:`, studentEvaluations);
+          
+          if (studentEvaluations.length > 0) {
+            // Get the most recent evaluation
+            const latestEvaluation = studentEvaluations.sort((a, b) => 
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            )[0];
             
-            if (studentScores.length > 0) {
-              // Get the most recent score
-              const latestScore = studentScores.sort((a: any, b: any) => 
-                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-              )[0];
-              
-              console.log(`Latest score for ${sprint.name}:`, latestScore);
-              
-              return {
-                ...sprint,
-                feedback: `Score: ${latestScore.score}/10`
-              };
-            }
+            console.log(`Latest evaluation for ${sprint.name}:`, latestEvaluation);
             
-            return sprint;
-          })
-        );
-      }
+            return {
+              ...sprint,
+              feedback: `Score: ${latestEvaluation.score}/10`
+            };
+          }
+          
+          return sprint;
+        })
+      );
     };
 
     // Initial load

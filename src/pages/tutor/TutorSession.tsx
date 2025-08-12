@@ -38,7 +38,7 @@ const TutorSessions: React.FC = () => {
     room: '',
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [rowsPerPage] = useState(8); // Only rowsPerPage is used
 
   const handleViewSession = (sessionId: number) => {
     navigate(`/tutor/session-view/${sessionId}`);
@@ -78,10 +78,17 @@ const TutorSessions: React.FC = () => {
     // Get all sessionStudents
     const sessionStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
     // For each student, if their last allocation matches this session/room, update their allocationData
-    sessionStudents.forEach((student: any) => {
+    interface Student {
+      name: string;
+      phoneNumber: string;
+      subject: string;
+      chapter: string;
+      session: string;
+      room: string;
+    }
+    sessionStudents.forEach((student: Student) => {
       if (student.session === newSession.session && student.room === newSession.room) {
-        // Update their allocationData (simulate as if they re-allocated for this session)
-        // This will only affect the currently logged-in student (in this browser)
+        
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
         if (student.name === userInfo.name && student.phoneNumber === userInfo.phoneNumber) {
           localStorage.setItem('studentAllocationData', JSON.stringify({

@@ -6,7 +6,7 @@ interface NavbarProps {
   activeLink?: string;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ userType, activeLink }) => {
+const Navbar: React.FC<NavbarProps> = ({ userType }) => {
   const navigate = useNavigate();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showPasswordPopup, setShowPasswordPopup] = useState(false);
@@ -49,11 +49,18 @@ const Navbar: React.FC<NavbarProps> = ({ userType, activeLink }) => {
       setError('User data not found');
       return;
     }
+
+    interface Person {
+      name: string;
+      phoneNumber: string;
+      role: string;
+    }
+
     
     const people = JSON.parse(adminPeopleData);
     
     // Find the current user
-    const currentUser = people.find((person: any) => 
+    const currentUser = people.find((person: Person) => 
       person.name === user?.name && person.phoneNumber === user?.phoneNumber
     );
     

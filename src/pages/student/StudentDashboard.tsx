@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiMessageCircle, FiLayers, FiBarChart2, FiArrowRight } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+
 import Pagination from '../../components/common/Pagination';
 
 interface AllocationData {
@@ -29,28 +28,12 @@ interface StudentDashboardProps {
   allocationData?: AllocationData | null;
 }
 
-const parseSessionTime = (session: string | undefined) => {
-  if (!session || typeof session !== 'string' || !session.includes('-')) return [0, 0];
-  const [start, end] = session.split(' - ');
-  const parseFlexible = (t: string | undefined) => {
-    if (!t) return 0;
-    const match = t.match(/(\d{1,2})(?::(\d{2}))?(am|pm)/i);
-    if (!match) return 0;
-    let hour = parseInt(match[1], 10);
-    let min = match[2] ? parseInt(match[2], 10) : 0;
-    let period = match[3].toLowerCase();
-    if (period === 'pm' && hour !== 12) hour += 12;
-    if (period === 'am' && hour === 12) hour = 0;
-    return hour * 60 + min;
-  };
-  return [parseFlexible(start?.trim()), parseFlexible(end?.trim())];
-};
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ allocationData }) => {
   const [sprintData, setSprintData] = useState<SprintData[]>([]);
   const [currentTimer, setCurrentTimer] = useState<{ time: number; isRunning: boolean }>({ time: 0, isRunning: false });
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [rowsPerPage] = useState(8);
   const [localAllocationData, setLocalAllocationData] = useState<AllocationData | null>(null);
 
   useEffect(() => {
@@ -97,7 +80,13 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ allocationData }) =
 
   // Always show table if allocation data exists
   let showTable = false;
-  let tableData: any[] = [];
+  interface AllocationTableRow {
+    subject: string;
+    chapter: string;
+    topic?: string;
+    status?: string;
+  }
+  let tableData: AllocationTableRow[] = [];
   
   if (finalAllocationData && finalAllocationData.subject && finalAllocationData.chapter) {
     showTable = true;
@@ -187,7 +176,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ allocationData }) =
                     <td className="py-4 px-4 text-gray-700">{row.chapter}</td>
                     <td className="py-4 px-4 text-gray-700">{row.topic}</td>
                     <td className="py-4 px-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(row.status)}`}>{row.status}</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(row.status ?? "Pending")}`}>{row.status ?? "Pending"}</span>
                     </td>
                   </tr>
                 ))}
