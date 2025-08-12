@@ -2,12 +2,26 @@
 // Converts existing localStorage data to the new session management system
 
 import { sessionManager } from './sessionManager';
+import type { ChatMessage } from './sessionManager';
+
+export interface LegacyMessage {
+  sender: string;
+  text: string;
+  timestamp?: string;
+}
 
 export interface LegacySessionData {
   date: string;
   session: string;
   room: string;
-  messages: any[];
+  messages: LegacyMessage[];
+}
+export interface LegacyScoreData {
+  studentName: string;
+  date: string;
+  session: string;
+  room: string;
+  score: number;
 }
 
 export interface LegacyStudentData {
@@ -57,11 +71,17 @@ export class DataMigration {
               chapter: 'Unknown'
             });
             
-            // Save evaluation with messages
+            // Map LegacyMessage[] to ChatMessage[]
+            const chatMessages = parsedData.messages.map((msg, idx) => ({
+              id: `legacy-${idx}`,
+              role: msg.sender === 'assistant' ? 'assistant' : 'user',
+              content: msg.text,
+              timestamp: msg.timestamp || new Date().toISOString()
+            }) as ChatMessage);
             sessionManager.saveEvaluation({
               score: 0,
               feedback: 'Migrated from legacy system',
-              messages: parsedData.messages
+              messages: chatMessages
             });
             
             console.log(`Migrated session: ${key} -> ${newSession.sessionId}`);
@@ -108,7 +128,7 @@ export class DataMigration {
     
     const scores = JSON.parse(localStorage.getItem('studentScores') || '[]');
     
-    scores.forEach((scoreData: any) => {
+  scores.forEach((scoreData: LegacyScoreData) => {
       try {
         // Find matching session by student name, date, session, and room
         const allSessions = sessionManager.getAllSessions();

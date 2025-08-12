@@ -3,6 +3,41 @@ import { Send, Mic, Paperclip, Sparkles } from 'lucide-react';
 import { sessionManager } from '../../utils/sessionManager';
 import type { ChatMessage } from '../../utils/sessionManager';
 
+// ✅ FIXED: More specific types for Speech Recognition
+
+// Interface for the speech recognition event results
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+// Interface for a speech recognition error
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+// Interface describing an instance of the SpeechRecognition object
+interface SpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+}
+
+// Type for the constructor itself (e.g., `new SpeechRecognition()`)
+type SpeechRecognitionConstructor = new () => SpeechRecognition;
+
+// Update the global window interface with the specific constructor type
+declare global {
+  interface Window {
+    SpeechRecognition: SpeechRecognitionConstructor;
+    webkitSpeechRecognition: SpeechRecognitionConstructor;
+  }
+}
+
 interface Message {
   id: string;
   sender: 'user' | 'ai';
@@ -11,12 +46,9 @@ interface Message {
   file?: File;
 }
 
-// Speech Recognition types
-declare global {
-  interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
-  }
+interface Sprint {
+  name: string;
+  topic?: string;
 }
 
 const StudentAI: React.FC = () => {
@@ -27,7 +59,9 @@ const StudentAI: React.FC = () => {
   const [currentTopic, setCurrentTopic] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
+  
+  // ✅ FIXED: Specific type for the ref, replacing `any`
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // Load existing chat history for current session and get current topic
   useEffect(() => {
@@ -39,7 +73,7 @@ const StudentAI: React.FC = () => {
       
       // Get current topic from sprintData
       const sprintData = JSON.parse(localStorage.getItem('sprintData') || '[]');
-      const currentStudent = sprintData.find((sprint: any) => sprint.name === user.name);
+      const currentStudent = (sprintData as Sprint[]).find((sprint) => sprint.name === user.name);
       
       if (currentStudent && currentStudent.topic && currentStudent.topic !== 'Topic 1') {
         setCurrentTopic(currentStudent.topic);
@@ -78,7 +112,7 @@ const StudentAI: React.FC = () => {
       if (userInfo) {
         const user = JSON.parse(userInfo);
         const sprintData = JSON.parse(localStorage.getItem('sprintData') || '[]');
-        const currentStudent = sprintData.find((sprint: any) => sprint.name === user.name);
+        const currentStudent = (sprintData as Sprint[]).find((sprint) => sprint.name === user.name);
         
         if (currentStudent && currentStudent.topic && currentStudent.topic !== 'Topic 1') {
           if (currentStudent.topic !== currentTopic) {
@@ -133,20 +167,21 @@ const StudentAI: React.FC = () => {
 
   // Initialize speech recognition
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognitionAPI) {
+      recognitionRef.current = new SpeechRecognitionAPI();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onresult = (event: any) => {
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
         setInput(transcript);
         setIsRecording(false);
       };
 
-      recognitionRef.current.onerror = (event: any) => {
+      // ✅ FIXED: Use the specific error event type
+      recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error);
         setIsRecording(false);
       };
@@ -190,10 +225,7 @@ const StudentAI: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
-    // Debug: Check if API key is available
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    console.log('API Key available:', !!apiKey);
-    console.log('API Key length:', apiKey?.length);
 
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -208,32 +240,31 @@ const StudentAI: React.FC = () => {
             {
               role: 'system',
               content: `You are a strict and accurate CA (Chartered Accountant) Exam Evaluator AI.
-            
-            Students will submit only their answers via text or voice. The question is not provided. 
-            
-            IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
-            
-            Your responsibilities:
-            
-            1. Carefully infer the most likely CA-related question based on the student's answer.
-            2. Evaluate the accuracy, completeness, and relevance of their answer in the context of Chartered Accountancy subjects.
-            3. Say whether the answer is correct, partially correct, or incorrect.
-            4. If incorrect or partially correct, provide the correct answer or explanation.
-            5. Give a score out of 10 and an accuracy percentage.
-            6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
-            7. Never make up unrelated questions. Stick strictly to CA context.
-            
-            ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
-            
-            Respond in the following format:
-            
-            ✅ Evaluation: [Your judgment]
-            📘 Inferred Question: [What you think the student was answering]
-            📘 Correction (if any): [Correct answer or missing parts]
-            📊 Score: X/10
-            🎯 Accuracy: Y%`
-            }
-            ,
+              
+              Students will submit only their answers via text or voice. The question is not provided. 
+              
+              IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
+              
+              Your responsibilities:
+              
+              1. Carefully infer the most likely CA-related question based on the student's answer.
+              2. Evaluate the accuracy, completeness, and relevance of their answer in the context of Chartered Accountancy subjects.
+              3. Say whether the answer is correct, partially correct, or incorrect.
+              4. If incorrect or partially correct, provide the correct answer or explanation.
+              5. Give a score out of 10 and an accuracy percentage.
+              6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
+              7. Never make up unrelated questions. Stick strictly to CA context.
+              
+              ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
+              
+              Respond in the following format:
+              
+              ✅ Evaluation: [Your judgment]
+              📘 Inferred Question: [What you think the student was answering]
+              📘 Correction (if any): [Correct answer or missing parts]
+              📊 Score: X/10
+              🎯 Accuracy: Y%`
+            },
             ...messages.map(msg => ({
               role: msg.sender === 'user' ? 'user' : 'assistant',
               content: msg.text
@@ -248,9 +279,6 @@ const StudentAI: React.FC = () => {
         })
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error response:', errorText);
@@ -258,8 +286,6 @@ const StudentAI: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('API Response data:', data);
-      
       const aiResponseText = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
       const aiResponse: Message = {
@@ -271,15 +297,12 @@ const StudentAI: React.FC = () => {
       
       setMessages(prev => [...prev, aiResponse]);
 
-      // Extract and save score to localStorage for tutor sprint
       const scoreMatch = aiResponseText.match(/📊 Score:\s*(\d+)\/10/);
       if (scoreMatch) {
         const score = scoreMatch[1];
         const currentSession = sessionManager.getCurrentSession();
         if (currentSession) {
-          // Always use the latest messages for this session
-          // Only use Message[]
-          const allMessages: Message[] = [...messages, aiResponse];
+          const allMessages: Message[] = [...messages, newMessage, aiResponse];
           const sessionMessages: ChatMessage[] = allMessages.map(msg => ({
             id: msg.id,
             role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -297,15 +320,12 @@ const StudentAI: React.FC = () => {
       }
     } catch (error) {
       console.error('Error calling OpenAI API:', error);
-      
-      // Fallback response in case of API error
       const fallbackResponse: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
         text: `I apologize, but I'm having trouble connecting to my knowledge base right now. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again in a moment, or check your internet connection.`,
         timestamp: new Date()
       };
-      
       setMessages(prev => [...prev, fallbackResponse]);
     } finally {
       setIsLoading(false);
@@ -325,9 +345,7 @@ const StudentAI: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Read file content
       const fileContent = await readFileContent(file);
-      
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -342,32 +360,31 @@ const StudentAI: React.FC = () => {
             {
               role: 'system',
               content: `You are a strict and accurate CA (Chartered Accountant) Exam Evaluator AI.
-            
-            Students will submit only their answers via text or voice. The question is not provided. 
-            
-            IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
-            
-            Your responsibilities:
-            
-            1. Carefully infer the most likely CA-related question based on the student's answer.
-            2. Evaluate the accuracy, completeness, and relevance of their answer in the context of Chartered Accountancy subjects.
-            3. Say whether the answer is correct, partially correct, or incorrect.
-            4. If incorrect or partially correct, provide the correct answer or explanation.
-            5. Give a score out of 10 and an accuracy percentage.
-            6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
-            7. Never make up unrelated questions. Stick strictly to CA context.
-            
-            ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
-            
-            Respond in the following format:
-            
-            ✅ Evaluation: [Your judgment]
-            📘 Inferred Question: [What you think the student was answering]
-            📘 Correction (if any): [Correct answer or missing parts]
-            📊 Score: X/10
-            🎯 Accuracy: Y%`
-            }
-            ,
+              
+              Students will submit only their answers via text or voice. The question is not provided. 
+              
+              IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
+              
+              Your responsibilities:
+              
+              1. Carefully infer the most likely CA-related question based on the student's answer.
+              2. Evaluate the accuracy, completeness, and relevance of their answer in the context of Chartered Accountancy subjects.
+              3. Say whether the answer is correct, partially correct, or incorrect.
+              4. If incorrect or partially correct, provide the correct answer or explanation.
+              5. Give a score out of 10 and an accuracy percentage.
+              6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
+              7. Never make up unrelated questions. Stick strictly to CA context.
+              
+              ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
+              
+              Respond in the following format:
+              
+              ✅ Evaluation: [Your judgment]
+              📘 Inferred Question: [What you think the student was answering]
+              📘 Correction (if any): [Correct answer or missing parts]
+              📊 Score: X/10
+              🎯 Accuracy: Y%`
+            },
             {
               role: 'user',
               content: `Please analyze this file: ${file.name}\n\nFile content:\n${fileContent}`
@@ -394,17 +411,13 @@ const StudentAI: React.FC = () => {
       
       setMessages(prev => [...prev, aiResponse]);
 
-      // Extract and save score to localStorage for tutor sprint
       const scoreMatch = aiResponseText.match(/📊 Score:\s*(\d+)\/10/);
       if (scoreMatch) {
         const score = scoreMatch[1];
         const currentSession = sessionManager.getCurrentSession();
         if (currentSession) {
-          // Always use the latest messages for this session
-          const allMessages: Message[] = [...messages, aiResponse];
-          // Type guard: filter only Message objects
-          const onlyMessages: Message[] = allMessages.filter((msg): msg is Message => typeof msg.sender === 'string' && typeof msg.text === 'string');
-          const sessionMessages: ChatMessage[] = onlyMessages.map(msg => ({
+          const allMessages: Message[] = [...messages, fileMessage, aiResponse];
+          const sessionMessages: ChatMessage[] = allMessages.map(msg => ({
             id: msg.id,
             role: msg.sender === 'user' ? 'user' : 'assistant',
             content: msg.text,
@@ -421,14 +434,12 @@ const StudentAI: React.FC = () => {
       }
     } catch (error) {
       console.error('Error processing file:', error);
-      
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
         text: `Sorry, I couldn't process the file "${file.name}". Please try uploading a different file or ask a question directly.`,
         timestamp: new Date()
       };
-      
       setMessages(prev => [...prev, errorResponse]);
     } finally {
       setIsLoading(false);
@@ -461,7 +472,6 @@ const StudentAI: React.FC = () => {
     if (file) {
       processFile(file);
     }
-    // Reset input to allow same file to be uploaded again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -481,35 +491,28 @@ const StudentAI: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        
-        {/* Header */}
         <header className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
-                </div>
-              <div>
-                <h1 className="font-semibold text-gray-900">StudyAI Assistant</h1>
-                <p className="text-sm text-gray-500">CA Study Assistant</p>
-                {currentTopic && (
-                  <div className="mt-1">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      📚 Topic: {currentTopic}
-                    </span>
-                  </div>
-                )}
-              </div>
             </div>
+            <div>
+              <h1 className="font-semibold text-gray-900">StudyAI Assistant</h1>
+              <p className="text-sm text-gray-500">CA Study Assistant</p>
+              {currentTopic && (
+                <div className="mt-1">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    📚 Topic: {currentTopic}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
-        {/* Messages Area */}
         <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white">
           <div className="max-w-4xl mx-auto p-4 space-y-6">
-            
-            {/* Welcome Screen */}
             {messages.length === 0 && (
               <div className="text-center py-12 px-4">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -529,15 +532,12 @@ const StudentAI: React.FC = () => {
               </div>
             )}
 
-            {/* Messages */}
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div className={`flex gap-3 max-w-[85%] ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-                  
-                  {/* Avatar */}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                     message.sender === 'user'
                       ? 'bg-blue-500'
@@ -549,8 +549,6 @@ const StudentAI: React.FC = () => {
                       <Sparkles className="w-4 h-4 text-white" />
                     )}
                   </div>
-
-                  {/* Message Bubble */}
                   <div className={`p-4 rounded-2xl ${
                     message.sender === 'user'
                       ? 'bg-blue-500 text-white'
@@ -572,7 +570,6 @@ const StudentAI: React.FC = () => {
               </div>
             ))}
 
-            {/* Loading Indicator */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className="flex gap-3">
@@ -589,17 +586,13 @@ const StudentAI: React.FC = () => {
                 </div>
               </div>
             )}
-
             <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* Input Area */}
         <div className="p-4 bg-white border-t border-gray-200">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-end gap-3 bg-gray-50 rounded-2xl p-3 border border-gray-200 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              
-              {/* File Upload */}
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-colors flex-shrink-0"
@@ -614,8 +607,6 @@ const StudentAI: React.FC = () => {
                 className="hidden"
                 accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
               />
-
-              {/* Text Input */}
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -630,8 +621,6 @@ const StudentAI: React.FC = () => {
                 rows={1}
                 style={{ lineHeight: '24px' }}
               />
-
-              {/* Voice Recording */}
               <button
                 onClick={handleVoiceRecord}
                 className={`p-2 rounded-xl transition-colors flex-shrink-0 ${
@@ -643,8 +632,6 @@ const StudentAI: React.FC = () => {
               >
                 <Mic className="w-5 h-5" />
               </button>
-
-              {/* Send Button */}
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || isLoading}
@@ -654,7 +641,6 @@ const StudentAI: React.FC = () => {
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            
             <p className="text-xs text-gray-400 text-center mt-2">
               StudyAI can make mistakes. Verify important information.
             </p>

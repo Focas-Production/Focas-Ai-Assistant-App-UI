@@ -3,7 +3,7 @@ import { Download, MessageCircle, FileText } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Sidebar from '../../components/layout/Sidebar';
 import { sessionManager } from '../../utils/sessionManager';
-import type { EvaluationData, SessionData } from '../../utils/sessionManager';
+
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -244,11 +244,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     URL.revokeObjectURL(url);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB');
-  };
-
+  
   const handleLogout = () => {
     localStorage.removeItem('userInfo');
     
@@ -306,22 +302,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     }
   };
 
-  const handleBackToSessions = () => {
-    // Check navigation source
-    const navigationSource = localStorage.getItem('reportNavigationSource');
-    if (navigationSource === 'tutor') {
-      window.location.href = '/tutor';
-      localStorage.removeItem('reportNavigationSource');
-    } else if (navigationSource === 'admin') {
-      // If we're in admin route, go back to admin
-      window.history.back();
-      localStorage.removeItem('reportNavigationSource');
-    } else {
-      // For student context, go back to student sessions
-      window.history.back();
-      localStorage.removeItem('reportNavigationSource');
-    }
-  };
+  
 
   const calculateAccuracy = (messages: ChatMessage[]) => {
     const userMessages = messages.filter(msg => msg.role === 'user');
@@ -331,7 +312,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     
     // Count questions that received detailed responses
     let detailedResponses = 0;
-    userMessages.forEach((userMsg, index) => {
+  userMessages.forEach((_, index) => {
       const correspondingAI = aiMessages[index];
       if (correspondingAI && correspondingAI.content.length > 100) {
         detailedResponses++;
@@ -348,7 +329,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     if (userMessages.length === 0) return '0';
     
     let totalScore = 0;
-    userMessages.forEach((userMsg, index) => {
+  userMessages.forEach((_, index) => {
       const correspondingAI = aiMessages[index];
       if (correspondingAI) {
         // Score based on response quality
@@ -473,14 +454,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       )}
       
       <div className={`flex-1 transition-all duration-500 ${shouldShowSidebar ? (collapsed ? 'ml-20' : 'ml-72') : ''} relative`}>
-        {/* Back Button - positioned on top of navbar
-        <button
-          onClick={handleBackToSessions}
-          className="absolute top-2 left-4 z-20 bg-white/90 backdrop-blur-lg border border-white/20 rounded-full p-3 shadow-lg hover:bg-white transition-all duration-200"
-          aria-label="Back to Sessions"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
-        </button> */}
+        
         
         {shouldShowSidebar && <Navbar userType={userType} activeLink={activeLink} />}
         
@@ -489,11 +463,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
           <div className="p-8">
             <div className="max-w-7xl mx-auto">
               
-              {/* Header
-              <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-6 shadow-2xl">
-                <h1 className="text-3xl font-bold text-blue-700 mb-2">Student Report</h1>
-                <p className="text-slate-600">View your AI assistant interactions and chat history</p>
-              </div> */}
+              
 
               {/* Session Info Display */}
               {(currentSession || chatHistory.length > 0) && (
@@ -606,28 +576,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                         );
                       })()}
 
-                      {/* Spoken Chat Summary */}
-                      {/* <div className="bg-gray-50 rounded-xl p-6">
-                        <h3 className="text-xl font-bold text-gray-700 mb-4">Spoken Chat Summary</h3>
-                        <div className="space-y-4">
-                          <div className="bg-white rounded-lg p-4">
-                            <h4 className="font-semibold text-gray-800 mb-2">Topics Discussed:</h4>
-                            <ul className="list-disc list-inside text-gray-600 space-y-1">
-                              <li>Accounting principles and standards</li>
-                              <li>Financial statement analysis</li>
-                              <li>Taxation concepts</li>
-                              <li>Auditing procedures</li>
-                            </ul>
-                          </div>
-                          <div className="bg-white rounded-lg p-4">
-                            <h4 className="font-semibold text-gray-800 mb-2">Key Insights:</h4>
-                            <p className="text-gray-600">
-                              The student demonstrated strong theoretical knowledge but needs more practice with practical applications. 
-                              Voice recognition accuracy was good, and the AI provided detailed explanations for complex topics.
-                            </p>
-                          </div>
-                        </div>
-                      </div> */}
+                     
                     </div>
                   ) : (
                     <div className="p-12 text-center">

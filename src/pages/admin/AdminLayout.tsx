@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Routes, Route, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Routes, Route } from 'react-router-dom';
 import Dashboard from './AdminManagePeople';
 import StudentDetails from './AdminStudentDetails';
 import AdminStudentview from './AdminStudentview';
@@ -15,7 +15,7 @@ const AdminLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [activeLink, setActiveLink] = useState('Manage People');
   const navigate = useNavigate();
-  const location = useLocation();
+  
 
 
 
@@ -70,8 +70,8 @@ const AdminLayout: React.FC = () => {
         <main className="overflow-auto h-full bg-white/60 backdrop-blur-md relative">
           <Routes>
             <Route path="/" element={renderContent()} />
-            <Route path="/student-view/:studentId" element={<AdminStudentview setActiveLink={setActiveLink} />} />
-            <Route path="/tutor-view/:tutorId" element={<AdminTutorview setActiveLink={setActiveLink} />} />
+            <Route path="/student-view/:studentId" element={<AdminStudentview />} />
+            <Route path="/tutor-view/:tutorId" element={<AdminTutorview />} />
             <Route path="/tutor-session-view/:sessionId" element={<TutorSessionview />} />
             <Route path="/student-report" element={<StudentReport />} />
           </Routes>

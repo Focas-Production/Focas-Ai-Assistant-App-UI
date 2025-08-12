@@ -2,10 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { sessionManager } from '../../utils/sessionManager';
 import { DataMigration } from '../../utils/dataMigration';
 
+interface DebugSession {
+  sessionId: string;
+  studentName: string;
+  date: string;
+  session: string;
+  room: string;
+  // Add other properties as needed
+}
+
+interface DebugEvaluation {
+  sessionId: string;
+  studentName: string;
+  score: number;
+  date: string;
+  session: string;
+  // Add other properties as needed
+}
+
+
 const SessionDebug: React.FC = () => {
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [evaluations, setEvaluations] = useState<any[]>([]);
-  const [currentSession, setCurrentSession] = useState<any>(null);
+  const [sessions, setSessions] = useState<DebugSession[]>([]);
+  const [evaluations, setEvaluations] = useState<DebugEvaluation[]>([]);
+  const [currentSession, setCurrentSession] = useState<DebugSession | null>(null);
 
   useEffect(() => {
     loadData();

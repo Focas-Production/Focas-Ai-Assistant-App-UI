@@ -121,7 +121,7 @@ const StudentDetails = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.map((student, index) => (
+                {filteredStudents.map((student) => (
                   <tr 
                     key={student.id} 
                     className="border-b border-gray-200 bg-white"

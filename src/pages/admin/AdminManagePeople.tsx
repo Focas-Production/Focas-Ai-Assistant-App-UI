@@ -24,17 +24,7 @@ const AdminManagePeople: React.FC = () => {
   // Initialize people data from localStorage or use default data
   const [people, setPeople] = useState<Person[]>(() => {
     const savedPeople = localStorage.getItem('adminPeopleData');
-    // if (savedPeople) {
-    //   return JSON.parse(savedPeople);
-    // }
-    // return [
-    //   { id: 1, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-    //   // { id: 2, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
-    //   // { id: 3, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-    //   // { id: 4, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
-    //   // { id: 5, name: 'AAA', phoneNumber: 'XXXX', role: 'Admin' },
-    //   // { id: 6, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-    // ];
+    
     if (savedPeople) {
       return JSON.parse(savedPeople);
     }
@@ -124,9 +114,7 @@ const AdminManagePeople: React.FC = () => {
             Add +
           </button>
           
-          {/* <button className="bg-green-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
-            Export-CSV
-          </button> */}
+          
         </div>
         
         {/* Table Container */}

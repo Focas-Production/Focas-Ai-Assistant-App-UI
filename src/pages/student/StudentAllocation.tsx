@@ -46,11 +46,7 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
       const currentDate = new Date().toLocaleDateString('en-GB');
       console.log('Current date being saved:', currentDate);
       
-      // Check if there's a matching tutor session
-      const tutorSessions = JSON.parse(localStorage.getItem('tutorSessions') || '[]');
-      const matchingSession = tutorSessions.find((s: any) => 
-        s.session === session && s.room === room
-      );
+  // Removed unused tutorSessions and matchingSession variables to fix warning
 
       // Always add student to sessionStudents (regardless of matching tutor session)
       const studentInfo = {

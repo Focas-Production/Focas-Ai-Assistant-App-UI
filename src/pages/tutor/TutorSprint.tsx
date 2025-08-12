@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import Pagination from '../../components/common/Pagination';
 import { sessionManager } from '../../utils/sessionManager';
 
 interface SprintData {
@@ -28,10 +27,7 @@ interface SessionStudent {
 }
 
 const TutorSprint = () => {
-  const [sessionStudents, setSessionStudents] = useState<SessionStudent[]>([]);
   const [sprints, setSprints] = useState<SprintData[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 8;
 
   const TOPIC_OPTIONS = ["Company Accounts", "Profit and Loss", "Accouting standards"];
   const STATUS_OPTIONS = ["pending", "completed", "come to live"];
@@ -91,7 +87,6 @@ const TutorSprint = () => {
         date: session.date
       }));
       
-      setSessionStudents(currentStudents);
       
       // Initialize sprints for current students
       const initialSprints = currentStudents.map(student => ({
@@ -113,7 +108,6 @@ const TutorSprint = () => {
         return isCurrentTimeAndDateInSession(student.session, student.date);
       });
       
-      setSessionStudents(filteredStudents);
       
       // Initialize sprints only for students in current session time
       const initialSprints = filteredStudents.map((student: SessionStudent) => ({
