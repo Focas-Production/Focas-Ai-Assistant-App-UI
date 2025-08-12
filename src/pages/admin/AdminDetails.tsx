@@ -112,7 +112,7 @@ const AdminDetails = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredAdmins.map((admin, index) => (
+                {filteredAdmins.map((admin) => (
                   <tr 
                     key={admin.id} 
                     className="border-b border-gray-200 bg-white"

@@ -24,17 +24,7 @@ const AdminManagePeople: React.FC = () => {
   // Initialize people data from localStorage or use default data
   const [people, setPeople] = useState<Person[]>(() => {
     const savedPeople = localStorage.getItem('adminPeopleData');
-    // if (savedPeople) {
-    //   return JSON.parse(savedPeople);
-    // }
-    // return [
-    //   { id: 1, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-    //   // { id: 2, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
-    //   // { id: 3, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-    //   // { id: 4, name: 'AAA', phoneNumber: 'XXXX', role: 'Student' },
-    //   // { id: 5, name: 'AAA', phoneNumber: 'XXXX', role: 'Admin' },
-    //   // { id: 6, name: 'AAA', phoneNumber: 'XXXX', role: 'Tutor' },
-    // ];
+    
     if (savedPeople) {
       return JSON.parse(savedPeople);
     }
@@ -124,9 +114,7 @@ const AdminManagePeople: React.FC = () => {
             Add +
           </button>
           
-          {/* <button className="bg-green-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
-            Export-CSV
-          </button> */}
+          
         </div>
         
         {/* Table Container */}
@@ -326,84 +314,93 @@ const AdminManagePeople: React.FC = () => {
               
               {/* Back Button */}
               <button 
-                onClick={() => setShowEditModal(false)}
-                className="absolute top-4 left-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
+  onClick={() => setShowEditModal(false)}
+  className="absolute top-4 right-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors duration-200"
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+  </svg>
+</button>
 
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Edit Person</h2>
+
+<h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">Edit Person</h2>
+
 
               <form onSubmit={handleEditSubmit} className="space-y-6">
                 
                 {/* Name Input */}
                 <div>
-                  <input
-                    type="text"
-                    placeholder="Enter the Name:"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
-                    required
-                  />
-                </div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+  <input
+    type="text"
+    placeholder="Enter the Name:"
+    value={formData.name}
+    onChange={(e) => setFormData({...formData, name: e.target.value})}
+    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+    required
+  />
+</div>
+
 
                 {/* Phone Number Input */}
                 <div>
-                  <input
-                    type="tel"
-                    placeholder="Enter the Phone number:"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
-                    required
-                  />
-                </div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+  <input
+    type="tel"
+    placeholder="Enter the Phone number:"
+    value={formData.phoneNumber}
+    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+    required
+  />
+</div>
+
 
                 {/* Role Selection */}
                 <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Select role"
-                    value={formData.role}
-                    onClick={() => setShowEditRoleOptions(!showEditRoleOptions)}
-                    readOnly
-                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none bg-white text-gray-800 cursor-pointer ${
-                      showEditRoleOptions ? 'border-blue-600' : 'border-gray-300'
-                    }`}
-                    required
-                  />
-                  {showEditRoleOptions && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                      <div className="py-1">
-                        <div className="px-4 py-2 text-gray-400 cursor-default">Select role</div>
-                        {['Admin', 'Tutor', 'Student'].map((role) => (
-                          <button
-                            key={role}
-                            type="button"
-                            onClick={() => {
-                              setFormData({...formData, role});
-                              setShowEditRoleOptions(false);
-                            }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 text-gray-800"
-                          >
-                            {role}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+  <input
+    type="text"
+    placeholder="Select role"
+    value={formData.role}
+    onClick={() => setShowEditRoleOptions(!showEditRoleOptions)}
+    readOnly
+    className={`w-full px-4 py-3 border rounded-xl focus:outline-none bg-white text-gray-800 cursor-pointer ${
+      showEditRoleOptions ? 'border-blue-600' : 'border-blue-600'
+    }`}
+    required
+  />
+  {showEditRoleOptions && (
+    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-blue-600 rounded-lg shadow-lg z-10">
+      <div className="py-1">
+        <div className="px-4 py-2 text-gray-400 cursor-default">Select role</div>
+        {['Admin', 'Tutor', 'Student'].map((role) => (
+          <button
+            key={role}
+            type="button"
+            onClick={() => {
+              setFormData({...formData, role});
+              setShowEditRoleOptions(false);
+            }}
+            className="w-full px-4 py-2 text-left hover:bg-blue-50 text-gray-800"
+          >
+            {role}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
+
 
                 {/* Submit Button */}
                 <button
-                  type="submit"
-                  className="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
-                >
-                  Update
-                </button>
+  type="submit"
+  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-colors duration-200"
+>
+  Update
+</button>
+
               </form>
             </div>
           </div>

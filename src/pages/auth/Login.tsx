@@ -88,14 +88,7 @@ const LoginPage: React.FC = () => {
           <img src="src/assets/logo.png" alt="FOCAS Logo" className="w-28" />
         </div>
 
-        {/* Title */}
-        {/* <h2 className="text-center text-[22px] font-medium text-gray-800 mb-1">
-          Sign in
-        </h2>
-        <p className="text-center text-sm text-gray-500 mb-8">
-          to continue to FOCAS
-        </p> */}
-
+        
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
 
@@ -134,13 +127,7 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Password hint */}
-          {/* <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-            <p className="font-medium mb-1">Login Instructions:</p>
-            <p>• Enter your exact name and phone number</p>
-            <p>• Use your role as password (student/tutor/admin)</p>
-            <p>• Contact admin if you're not in the system</p>
-          </div> */}
+          
 
           <div className="flex justify-end text-xs text-blue-600 font-medium">
             <a href="/forgot-password" className="hover:underline">Forgot password?</a>
@@ -178,13 +165,7 @@ const LoginPage: React.FC = () => {
           Continue with Google
         </button>
 
-        {/* Footer */}
-        {/* <p className="text-center text-sm text-gray-500 mt-8">
-          Don't have an account?{" "}
-          <a href="/signup" className="text-blue-600 font-medium hover:underline">
-            Sign up
-          </a>
-        </p> */}
+        
 
       </div>
     </div>

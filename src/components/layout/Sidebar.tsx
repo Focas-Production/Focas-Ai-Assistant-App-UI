@@ -1,8 +1,17 @@
 import React from 'react';
-import { FiLogOut, FiMenu, FiHome, FiUsers, FiShield, FiBookOpen, FiMessageCircle, FiLayers, FiBarChart2, FiMapPin, FiUserCheck, FiTarget } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiHome, FiUsers, FiShield, FiBookOpen, FiMessageCircle, FiLayers,  FiMapPin, FiUserCheck, FiTarget } from 'react-icons/fi';
 import logo from '../../assets/logo.png';
 
-const SidebarLink = ({ icon: Icon, label, active, collapsed, onClick, disabled }: any) => (
+interface SidebarLinkProps {
+  icon: React.ComponentType<{ size?: number }>;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+const SidebarLink = ({ icon: Icon, label, active, collapsed, onClick, disabled }: SidebarLinkProps) => (
   <div
     onClick={onClick}
     className={`group relative flex items-center rounded-3xl px-4 py-4 mb-2 transform transition-transform duration-100 ${
