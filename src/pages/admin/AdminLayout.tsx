@@ -51,7 +51,7 @@ const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-100 via-white to-blue-50 font-inter">
+    <div className=" min-h-screen bg-gradient-to-br from-gray-100 via-white to-blue-50 font-inter">
       
       <Sidebar
         collapsed={collapsed}
@@ -67,7 +67,7 @@ const AdminLayout: React.FC = () => {
         <Navbar userType="admin" activeLink={activeLink} />
 
         {/* Main Content */}
-        <main className="overflow-auto h-full bg-white/60 backdrop-blur-md relative">
+        <main className="flex-1 overflow-y-auto  from-blue-50 via-white to-blue-100 p-8">
           <Routes>
             <Route path="/" element={renderContent()} />
             <Route path="/student-view/:studentId" element={<AdminStudentview />} />

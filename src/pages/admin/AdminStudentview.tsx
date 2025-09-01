@@ -61,7 +61,7 @@ const AdminStudentview = () => {
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
+    <div className="p-8">
       <div className="max-w-7xl mx-auto">
         
         

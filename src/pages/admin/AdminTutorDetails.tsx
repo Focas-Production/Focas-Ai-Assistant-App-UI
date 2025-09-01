@@ -84,22 +84,22 @@ const TutorDetails = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
+    <div className="p-8">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Header with Search */}
         <div className="flex justify-between items-center mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
               placeholder="Search Tutor"
               className="w-full pl-10 pr-4 py-3 border border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-              </div>
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
 
         {/* Tutor's List */}
         <div className="mb-4">
@@ -119,44 +119,50 @@ const TutorDetails = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredTutors.map((tutor) => (
-                  <tr key={tutor.id} className="border-b border-gray-200 bg-white">
-                    <td className="w-1/4 py-4 px-4 font-medium text-gray-800">{tutor.name}</td>
-                    <td className="w-1/4 py-4 px-4 text-gray-700">{tutor.phoneNumber}</td>
-                    <td className="w-1/4 py-4 px-4">
-                      <button 
-                        onClick={() => handleViewTutor(tutor.id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
-                      >
-                        View
-                      </button>
-                    </td>
-                    <td className="w-1/4 py-4 px-4">
-                      <div className="flex gap-2">
-                        {/* Edit Button */}
-                        <button
-                          onClick={() => handleEditTutor(tutor)}
-                          className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
-                          title="Edit"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteTutor(tutor.id)}
-                          className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
-                          title="Delete"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
+                {filteredTutors.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-gray-500">
+                      No matches found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredTutors.map((tutor) => (
+                    <tr key={tutor.id} className="border-b border-gray-200 bg-white">
+                      <td className="w-1/4 py-4 px-4 font-medium text-gray-800">{tutor.name}</td>
+                      <td className="w-1/4 py-4 px-4 text-gray-700">{tutor.phoneNumber}</td>
+                      <td className="w-1/4 py-4 px-4">
+                        <button
+                          onClick={() => handleViewTutor(tutor.id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
+                        >
+                          View
+                        </button>
+                      </td>
+                      <td className="w-1/4 py-4 px-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditTutor(tutor)}
+                            className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
+                            title="Edit"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTutor(tutor.id)}
+                            className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
+                            title="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -166,9 +172,7 @@ const TutorDetails = () => {
         {showEditModal && editingTutor && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
-              
-              {/* Close Button */}
-              <button 
+              <button
                 onClick={() => setShowEditModal(false)}
                 className="absolute top-4 right-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors duration-200"
               >
@@ -180,34 +184,30 @@ const TutorDetails = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">Edit Tutor</h2>
 
               <form onSubmit={handleEditSubmit} className="space-y-6">
-                
-                {/* Name Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                   <input
                     type="text"
                     placeholder="Enter the Name:"
                     value={editForm.name}
-                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                     className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                     required
                   />
                 </div>
 
-                {/* Phone Number Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                   <input
                     type="tel"
                     placeholder="Enter the Phone number:"
                     value={editForm.phoneNumber}
-                    onChange={(e) => setEditForm({...editForm, phoneNumber: e.target.value})}
+                    onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
                     className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                     required
                   />
                 </div>
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-colors duration-200"

@@ -143,7 +143,7 @@ const StudentSessions = () => {
   const paginatedSessions = sessions.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   return (
-    <div className="h-full bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4">
+    <div className=" p-8">
       <div className="max-w-7xl mx-auto  flex-col">
         
         {/* Table Container */}

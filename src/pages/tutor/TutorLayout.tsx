@@ -35,7 +35,7 @@ const TutorLayout: React.FC = () => {
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-100 via-white to-blue-50 font-inter">
       <Sidebar
-        variant="tutor"
+        variant="tutor" 
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         activeLink={activeLink}

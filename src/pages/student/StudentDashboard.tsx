@@ -139,7 +139,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ allocationData }) =
   };
 
   return (
-    <div className="p-8 bg-gradient-to-br from-blue-100 via-white to-blue-50 min-h-screen font-inter">
+    <div className="p-8   font-inter">
       {/* Timer Display */}
       {currentTimer.isRunning && (
         <div className="mb-6 bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">

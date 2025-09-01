@@ -10,6 +10,7 @@ interface SessionStudent {
   session: string;
   room: string;
   date: string;
+  tutorName?: string; // <-- add this line
 }
 
 interface Session {
@@ -35,14 +36,19 @@ const TutorSessionview = () => {
   }, [sessionId]);
 
   useEffect(() => {
-    // Get students who have chosen the same session and room
+    // Get students who have chosen the same session and room AND match the current tutor
     if (session) {
-      const sessionStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
-      
-      const students = sessionStudents.filter((student: SessionStudent) => 
-        student.session === session.session && student.room === session.room
+      const sessionStudentsRaw = localStorage.getItem('sessionStudents');
+      const sessionStudents: SessionStudent[] = sessionStudentsRaw ? JSON.parse(sessionStudentsRaw) : [];
+      const userInfoRaw = localStorage.getItem('userInfo');
+      const userInfo = userInfoRaw ? JSON.parse(userInfoRaw) : null;
+      const tutorName: string = userInfo ? userInfo.name : '';
+      // Only show students for this session/room AND for this tutor (tutorName must match)
+      const students = sessionStudents.filter((student: SessionStudent) =>
+        student.session === session.session &&
+        student.room === session.room &&
+        student.tutorName === tutorName
       );
-      
       setMatchingStudents(students);
     }
   }, [session]);
@@ -71,7 +77,7 @@ const TutorSessionview = () => {
   // Use uniqueStudents for rendering
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
+    <div className="p-8">
       <div className="max-w-7xl mx-auto">
         
         
@@ -103,45 +109,65 @@ const TutorSessionview = () => {
                 <tr className="border-b border-white/30 bg-gray-100">
                   <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Name</th>
                   <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Phone Number</th>
+                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Chapter</th>
+                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Topic</th>
                   <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {uniqueStudents.length > 0 ? (
-                  uniqueStudents.map((student, index) => (
-                    <tr 
-                      key={student.id} 
-                      className={`${index < uniqueStudents.length - 1 ? 'border-b border-black/10' : ''} hover:bg-white/20 transition-colors duration-200 cursor-pointer bg-white`}
-                    >
-                      <td className="py-4 px-4 text-gray-800 font-medium">{student.name}</td>
-                      <td className="py-4 px-4 text-gray-700">{student.phoneNumber || 'N/A'}</td>
-                      <td className="py-4 px-4">
-                        <button 
-                          onClick={() => {
-                            // Store the selected session data for the report page
-                            localStorage.setItem('selectedSessionForReport', JSON.stringify({
-                              date: session.date,
-                              session: session.session,
-                              room: session.room,
-                              studentName: student.name,
-                              studentPhone: student.phoneNumber
-                            }));
-                            
-                            // Since we're in TutorSessionview, we're in tutor context
-                            // Set navigation source for tutor
-                            localStorage.setItem('reportNavigationSource', 'tutor');
-                            navigate('/tutor/student-report');
-                          }}
-                          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  uniqueStudents.map((student, index) => {
+                    // Get chapter from student allocation (already in student object)
+                    const chapter = student.chapter || 'N/A';
+                    // Get topic from sprintData in localStorage for this student/date/session/room
+                    let topic = 'N/A';
+                    try {
+                      const sprintData = JSON.parse(localStorage.getItem('sprintData') || '[]');
+                      const sprint = sprintData.find((s: any) =>
+                        s.name === student.name &&
+                        s.id === student.id &&
+                        s.session === session.session &&
+                        s.room === session.room &&
+                        s.date === session.date
+                      );
+                      if (sprint && sprint.topic) topic = sprint.topic;
+                    } catch {}
+                    return (
+                      <tr 
+                        key={student.id} 
+                        className={`${index < uniqueStudents.length - 1 ? 'border-b border-black/10' : ''} hover:bg-white/20 transition-colors duration-200 cursor-pointer bg-white`}
+                      >
+                        <td className="py-4 px-4 text-gray-800 font-medium">{student.name}</td>
+                        <td className="py-4 px-4 text-gray-700">{student.phoneNumber || 'N/A'}</td>
+                        <td className="py-4 px-4 text-gray-700">{chapter}</td>
+                        <td className="py-4 px-4 text-gray-700">{topic}</td>
+                        <td className="py-4 px-4">
+                          <button 
+                            onClick={() => {
+                              // Store the selected session data for the report page
+                              localStorage.setItem('selectedSessionForReport', JSON.stringify({
+                                date: session.date,
+                                session: session.session,
+                                room: session.room,
+                                studentName: student.name,
+                                studentPhone: student.phoneNumber
+                              }));
+                              // Since we're in TutorSessionview, we're in tutor context
+                              // Set navigation source for tutor
+                              localStorage.setItem('reportNavigationSource', 'tutor');
+                              navigate('/tutor/student-report');
+                            }}
+                            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={3} className="py-8 px-4 text-center text-gray-500">
+                    <td colSpan={5} className="py-8 px-4 text-center text-gray-500">
                       No students found for this session.
                     </td>
                   </tr>

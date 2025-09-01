@@ -96,27 +96,9 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
     setError('');
   };
 
-  const handleCancel = () => {
-    setShowProfilePopup(false);
-    setShowPasswordPopup(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setError('');
-  };
+  
 
-  // Back arrow handlers
-  const handleBackFromProfile = () => {
-    setShowProfilePopup(false);
-  };
-  const handleBackFromPassword = () => {
-    setShowPasswordPopup(false);
-    setShowProfilePopup(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setError('');
-  };
+
 
   return (
     <>
@@ -152,56 +134,57 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
 
       {/* Profile Popup */}
       {showProfilePopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-          {/* Light overlay, not blocking sidebar/navbar */}
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm pointer-events-none" />
-          <div className="relative z-10 w-96 max-w-md mx-4 pointer-events-auto">
-            <div className="bg-white rounded-2xl p-6 shadow-2xl">
-              {/* Back Arrow */}
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowProfilePopup(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowProfilePopup(false)}
+              className="absolute top-4 right-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+              Profile
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={user?.name || ''}
+                  disabled
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <input
+                  type="text"
+                  value={user?.phoneNumber || ''}
+                  disabled
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
               <button
-                onClick={handleBackFromProfile}
-                className="absolute top-4 left-4 text-blue-600 hover:text-blue-800 text-2xl font-bold"
-                aria-label="Back"
+                onClick={handleChangePassword}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-colors"
               >
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+                Change Password
               </button>
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Profile</h2>
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                  <input
-                    type="text"
-                    value={user?.name || ''}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                  <input
-                    type="text"
-                    value={user?.phoneNumber || ''}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleChangePassword}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Change Password
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Close
-                </button>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -209,73 +192,75 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
 
       {/* Password Change Popup */}
       {showPasswordPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-          {/* Light overlay, not blocking sidebar/navbar */}
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm pointer-events-none" />
-          <div className="relative z-10 w-96 max-w-md mx-4 pointer-events-auto">
-            <div className="bg-white rounded-2xl p-6 shadow-2xl">
-              {/* Back Arrow */}
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowPasswordPopup(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowPasswordPopup(false)}
+              className="absolute top-4 right-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+              Change Password
+            </h2>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
               <button
-                onClick={handleBackFromPassword}
-                className="absolute top-4 left-4 text-blue-600 hover:text-blue-800 text-2xl font-bold"
-                aria-label="Back"
+                onClick={handleUpdatePassword}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-colors"
               >
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+                Update
               </button>
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Change Password</h2>
-              {error && (
-                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter current password"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter new password"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Confirm new password"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleUpdatePassword}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Update
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
+              
             </div>
           </div>
         </div>

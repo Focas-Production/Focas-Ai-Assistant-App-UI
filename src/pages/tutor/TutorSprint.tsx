@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { sessionManager } from '../../utils/sessionManager';
 
 interface SprintData {
@@ -26,8 +27,32 @@ interface SessionStudent {
   date: string;
 }
 
+
 const TutorSprint = () => {
   const [sprints, setSprints] = useState<SprintData[]>([]);
+  const navigate = useNavigate();
+  // Handle feedback click to navigate to report page
+  const handleFeedbackClick = (sprint: SprintData) => {
+    // Store session info in localStorage for report page
+    // Try to find the session details from sessionManager
+    const allSessions = sessionManager.getAllSessions();
+    const matchingSession = allSessions.find(
+      (session) => session.studentName === sprint.name
+    );
+    if (matchingSession) {
+      localStorage.setItem(
+        'selectedSessionForReport',
+        JSON.stringify({
+          date: matchingSession.date,
+          session: matchingSession.session,
+          room: matchingSession.room,
+          studentName: matchingSession.studentName
+        })
+      );
+    }
+    localStorage.setItem('reportNavigationSource', 'tutor');
+    navigate('/tutor/student-report');
+  };
 
   const TOPIC_OPTIONS = ["Company Accounts", "Profit and Loss", "Accouting standards"];
   const STATUS_OPTIONS = ["pending", "completed", "come to live"];
@@ -311,13 +336,13 @@ const TutorSprint = () => {
     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-6 shadow-2xl">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-6 shadow-sm">
           <h1 className="text-3xl font-bold text-blue-700 mb-2">Tutor Sprint Management</h1>
           <p className="text-slate-600">Current Session: <span className="font-semibold text-blue-600">{getCurrentSessionInfo().session}</span> | Date: <span className="font-semibold text-blue-600">{getCurrentSessionInfo().date}</span></p>
         </div>
 
         {/* Table */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -387,7 +412,13 @@ const TutorSprint = () => {
                       </div>
                     </td>
                     <td className="w-1/5 text-center px-6 py-4 text-lg text-gray-700">
-                      {sprint.feedback}
+                      <span
+                        className="cursor-pointer text-blue-600 hover:underline"
+                        title="View Report"
+                        onClick={() => handleFeedbackClick(sprint)}
+                      >
+                        {sprint.feedback}
+                      </span>
                     </td>
                     <td className="w-1/5 text-center px-6 py-4">
                     <div className="inline-flex items-center justify-center gap-1">

@@ -44,6 +44,7 @@ interface Message {
   text: string;
   timestamp: Date;
   file?: File;
+  inputMode?: 'text' | 'voice' | 'file' | 'image';
 }
 
 interface Sprint {
@@ -176,7 +177,15 @@ const StudentAI: React.FC = () => {
 
       recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
-        setInput(transcript);
+        // Send voice message directly
+        const voiceMessage: Message = {
+          id: Date.now().toString(),
+          sender: 'user',
+          text: transcript,
+          timestamp: new Date(),
+          inputMode: 'voice'
+        };
+        setMessages(prev => [...prev, voiceMessage]);
         setIsRecording(false);
       };
 
@@ -218,7 +227,8 @@ const StudentAI: React.FC = () => {
       id: Date.now().toString(),
       sender: 'user',
       text: input,
-      timestamp: new Date()
+      timestamp: new Date(),
+      inputMode: 'text'
     };
 
     setMessages(prev => [...prev, newMessage]);
@@ -338,7 +348,8 @@ const StudentAI: React.FC = () => {
       sender: 'user',
       text: `📎 Uploaded: ${file.name}`,
       timestamp: new Date(),
-      file: file
+      file: file,
+      inputMode: file.type.startsWith('image/') ? 'image' : 'file'
     };
     
     setMessages(prev => [...prev, fileMessage]);

@@ -312,14 +312,20 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     
     // Count questions that received detailed responses
     let detailedResponses = 0;
-  userMessages.forEach((_, index) => {
+    let respondedQuestions = 0;
+    
+    userMessages.forEach((_, index) => {
       const correspondingAI = aiMessages[index];
-      if (correspondingAI && correspondingAI.content.length > 100) {
-        detailedResponses++;
+      if (correspondingAI && correspondingAI.content) {
+        respondedQuestions++;
+        if (correspondingAI.content.length > 100) {
+          detailedResponses++;
+        }
       }
     });
     
-    return Math.round((detailedResponses / userMessages.length) * 100).toString();
+    if (respondedQuestions === 0) return '0';
+    return Math.round((detailedResponses / respondedQuestions) * 100).toString();
   };
 
   const calculateScore = (messages: ChatMessage[]) => {
@@ -329,9 +335,12 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     if (userMessages.length === 0) return '0';
     
     let totalScore = 0;
-  userMessages.forEach((_, index) => {
+    let scoredQuestions = 0;
+    
+    userMessages.forEach((_, index) => {
       const correspondingAI = aiMessages[index];
-      if (correspondingAI) {
+      if (correspondingAI && correspondingAI.content) {
+        scoredQuestions++;
         // Score based on response quality
         if (correspondingAI.content.length > 200) totalScore += 2; // Detailed response
         else if (correspondingAI.content.length > 100) totalScore += 1.5; // Good response
@@ -339,7 +348,8 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       }
     });
     
-    const averageScore = totalScore / userMessages.length;
+    if (scoredQuestions === 0) return '0';
+    const averageScore = totalScore / scoredQuestions;
     return Math.min(10, Math.round(averageScore * 2)).toString(); // Scale to 10
   };
 
@@ -363,14 +373,14 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       const correspondingAI = aiMessages[index];
       
       // Analyze question complexity
-      if (userMsg.content.length > 50) {
+      if (userMsg.content && userMsg.content.length > 50) {
         detailedQuestions++;
       } else {
         shortQuestions++;
       }
       
       // Analyze response quality
-      if (correspondingAI) {
+      if (correspondingAI && correspondingAI.content) {
         if (correspondingAI.content.length > 200) {
           detailedResponses++;
         } else if (correspondingAI.content.length < 50) {
@@ -402,7 +412,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
     }
 
     // Analyze specific topics if mentioned
-    const content = messages.map(m => m.content.toLowerCase()).join(' ');
+    const content = messages.map(m => m.content ? m.content.toLowerCase() : '').join(' ');
     if (content.includes('accounting') || content.includes('financial')) {
       feedback.push({ 
         emoji: '📊', 
@@ -441,7 +451,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
   };
 
   return (
-    <div className={`${shouldShowSidebar ? 'flex h-screen' : 'h-full'} bg-gradient-to-br from-gray-100 via-white to-blue-50 font-inter`}>
+    <div className={`${shouldShowSidebar ? 'flex h-screen' : 'h-full'} `}>
       {shouldShowSidebar && (
         <Sidebar 
           variant={userType} 
@@ -467,7 +477,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
 
               {/* Session Info Display */}
               {(currentSession || chatHistory.length > 0) && (
-                <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-4 mb-6">
+                <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-sm p-4 mb-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
@@ -486,7 +496,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
               )}
 
               {/* Tab Navigation */}
-              <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden mb-6">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl overflow-hidden mb-6">
                 <div className="flex">
                   <button
                     onClick={() => setActiveTab('report')}
@@ -516,7 +526,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
               {/* Content */}
               {activeTab === 'report' ? (
                 /* Report Tab */
-                <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden max-h-[800px] overflow-y-auto">
+                <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden max-h-[800px] overflow-y-auto shadow-xl">
                   {currentSession ? (
                     <div className="p-6">
                                               {(() => {
@@ -524,16 +534,16 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                           if (!sessionToShow) return null;
                           return (
                           <>
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="flex justify-between items-center mb-6 ">
                               <div>
-                                <h2 className="text-2xl font-bold text-blue-700 mb-2">AI Assistant Chat Report</h2>
+                                <h2 className="text-2xl  font-bold text-blue-700 mb-2">AI Assistant Chat Report</h2>
                                 <p className="text-gray-600">
                                   Date: {sessionToShow.date} | Session: {sessionToShow.session} | Room: {sessionToShow.room}
                                 </p>
                               </div>
                               <button
                                 onClick={generatePDF}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors duration-200 shadow-lg"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors duration-200 shadow-2x;"
                               >
                                 <Download className="w-5 h-5" />
                                 Download PDF
@@ -607,7 +617,7 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                 </div>
               ) : (
                 /* History Tab */
-                <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden">
+                <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-xl">
                   <div className="p-6">
                     <h2 className="text-2xl font-bold text-blue-700 mb-6">Chat History</h2>
                     
@@ -650,6 +660,22 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                                       <span className="text-xs text-gray-500">{message.timestamp}</span>
                                     </div>
                                     <p className="text-gray-800 text-sm whitespace-pre-wrap">{message.content}</p>
+                                    {message.role === 'user' && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {(() => {
+                                          // Support legacy messages without inputMode
+                                          const inputMode = (message as any).inputMode;
+                                          let label = 'Text';
+                                          if (inputMode) {
+                                            label = inputMode.charAt(0).toUpperCase() + inputMode.slice(1);
+                                          } else if ((message as any).file) {
+                                            // If file exists, guess type
+                                            label = (message as any).file.type && (message as any).file.type.startsWith('image/') ? 'Image' : 'File';
+                                          }
+                                          return `Input Mode: ${label}`;
+                                        })()}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>

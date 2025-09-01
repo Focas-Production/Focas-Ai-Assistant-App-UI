@@ -7,6 +7,8 @@ interface Person {
   name: string;
   phoneNumber: string;
   role: string;
+  level?: string;
+  batch?: string;
 }
 
 const StudentDetails = () => {
@@ -15,7 +17,7 @@ const StudentDetails = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Person | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', phoneNumber: '' });
+  const [editForm, setEditForm] = useState({ name: '', phoneNumber: '', level: '', batch: '' });
 
   // Load students from localStorage (filter only those with role "Student")
   useEffect(() => {
@@ -38,7 +40,12 @@ const StudentDetails = () => {
   // Edit button handler
   const handleEditStudent = (student: Person) => {
     setEditingStudent(student);
-    setEditForm({ name: student.name, phoneNumber: student.phoneNumber });
+    setEditForm({ 
+      name: student.name, 
+      phoneNumber: student.phoneNumber,
+      level: student.level || '',
+      batch: student.batch || ''
+    });
     setShowEditModal(true);
   };
 
@@ -48,7 +55,13 @@ const StudentDetails = () => {
     if (editingStudent) {
       const updatedStudents = students.map((student) =>
         student.id === editingStudent.id
-          ? { ...student, name: editForm.name, phoneNumber: editForm.phoneNumber }
+          ? { 
+              ...student, 
+              name: editForm.name, 
+              phoneNumber: editForm.phoneNumber,
+              level: editForm.level,
+              batch: editForm.batch
+            }
           : student
       );
       setStudents(updatedStudents);
@@ -58,7 +71,13 @@ const StudentDetails = () => {
         const allPeople: Person[] = JSON.parse(adminPeopleData);
         const updatedPeople = allPeople.map((person) =>
           person.id === editingStudent.id
-            ? { ...person, name: editForm.name, phoneNumber: editForm.phoneNumber }
+            ? { 
+                ...person, 
+                name: editForm.name, 
+                phoneNumber: editForm.phoneNumber,
+                level: editForm.level,
+                batch: editForm.batch
+              }
             : person
         );
         localStorage.setItem('adminPeopleData', JSON.stringify(updatedPeople));
@@ -84,23 +103,22 @@ const StudentDetails = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
+    <div className=" p-8">
       <div className="max-w-7xl mx-auto">
         
         {/* Header with Search */}
         <div className="flex justify-between items-center mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
               placeholder="Search Student"
               className="w-full pl-10 pr-4 py-3 border border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          
-              </div>
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
 
         {/* Student's List */}
         <div className="mb-4">
@@ -115,60 +133,60 @@ const StudentDetails = () => {
                 <tr className="border-b border-white/30 bg-gray-100">
                   <th className="text-left py-4 px-4 text-blue-900 font-semibold text-lg">Name</th>
                   <th className="text-left py-4 px-4 text-blue-900 font-semibold text-lg">Phone Number</th>
+                  <th className="text-left py-4 px-4 text-blue-900 font-semibold text-lg">Level</th>
+                  <th className="text-left py-4 px-4 text-blue-900 font-semibold text-lg">Batch</th>
                   <th className="text-left py-4 px-4 text-blue-900 font-semibold text-lg">Status</th>
                   <th className="w-1/4 text-left py-3 px-4 text-blue-900 font-semibold text-lg">Actions</th>
-                  
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.map((student) => (
-                  <tr 
-                    key={student.id} 
-                    className="border-b border-gray-200 bg-white"
-                  >
-                    <td className="py-4 px-4 font-medium text-gray-800">
-                      {student.name}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {student.phoneNumber}
-                    </td>
-                    <td className="py-4 px-4">
-                      <button 
-                        onClick={() => handleViewStudent(student.id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
-                      >
-                        View
-                      </button>
-                      
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex gap-2">
-                        {/* Edit Button */}
-                        <button
-                          onClick={() => handleEditStudent(student)}
-                          className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
-                          title="Edit"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteStudent(student.id)}
-                          className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
-                          title="Delete"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
+                {filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-4 text-center text-gray-500">
+                      No matches found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredStudents.map((student) => (
+                    <tr key={student.id} className="border-b border-gray-200 bg-white">
+                      <td className="py-4 px-4 font-medium text-gray-800">{student.name}</td>
+                      <td className="py-4 px-4 text-gray-700">{student.phoneNumber}</td>
+                      <td className="py-4 px-4 text-gray-700">{student.level || '-'}</td>
+                      <td className="py-4 px-4 text-gray-700">{student.batch || '-'}</td>
+                      <td className="py-4 px-4">
+                        <button 
+                          onClick={() => handleViewStudent(student.id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
+                        >
+                          View
+                        </button>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditStudent(student)}
+                            className="text-blue-500 hover:text-blue-600 p-2 transition-colors duration-200"
+                            title="Edit"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStudent(student.id)}
+                            className="text-red-500 hover:text-red-600 p-2 transition-colors duration-200"
+                            title="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
-              
             </table>
           </div>
         </div>
@@ -177,8 +195,6 @@ const StudentDetails = () => {
         {showEditModal && editingStudent && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
-              
-              {/* Close Button */}
               <button 
                 onClick={() => setShowEditModal(false)}
                 className="absolute top-4 right-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors duration-200"
@@ -190,9 +206,7 @@ const StudentDetails = () => {
 
               <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">Edit Student</h2>
 
-              <form onSubmit={handleEditSubmit} className="space-y-6">
-                
-                {/* Name Input */}
+              <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                   <input
@@ -205,7 +219,6 @@ const StudentDetails = () => {
                   />
                 </div>
 
-                {/* Phone Number Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                   <input
@@ -218,7 +231,40 @@ const StudentDetails = () => {
                   />
                 </div>
 
-                {/* Submit Button */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
+                  <input
+                    type="text"
+                    placeholder="Enter Level (e.g., Foundation)"
+                    value={editForm.level}
+                    onChange={(e) => setEditForm({...editForm, level: e.target.value})}
+                    className="w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Batch (Month & Year)
+                  </label>
+                  <div className="relative">
+                    {!editForm.batch && (
+                      <span className="absolute left-4 top-3 text-gray-500 pointer-events-none">
+                        Select Batch
+                      </span>
+                    )}
+                    <input
+                      type="month"
+                      value={editForm.batch || ""}
+                      onChange={(e) => setEditForm({ ...editForm, batch: e.target.value })}
+                      onFocus={(e) => e.target.showPicker?.()}
+                      className={`w-full px-4 py-3 border border-blue-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 ${
+                        !editForm.batch ? '[&::-webkit-datetime-edit]:opacity-0' : ''
+                      }`}
+                    />
+                  </div>
+                </div>
+
+
                 <button
                   type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-colors duration-200"

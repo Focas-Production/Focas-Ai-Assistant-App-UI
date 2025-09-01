@@ -145,26 +145,8 @@ const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center gap-4 my-6">
-          <hr className="flex-1 border-gray-300" />
-          <span className="text-sm text-gray-400">or</span>
-          <hr className="flex-1 border-gray-300" />
-        </div>
-
-        {/* Google Button */}
-        <button
-          type="button"
-          className="w-full border border-gray-300 py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition text-sm"
-        >
-          <img
-            src="src/assets/google-icon-logo-svgrepo-com.svg"
-            alt="Google"
-            className="w-4 h-4"
-          />
-          Continue with Google
-        </button>
-
+        
+        
         
 
       </div>
