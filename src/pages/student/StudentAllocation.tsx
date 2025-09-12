@@ -248,7 +248,7 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
 
       // Also save to localStorage for backward compatibility
       const studentInfo = {
-        id: newSession._id || Date.now(),
+        id: (newSession as { _id?: string })._id || Date.now(),
         name: user?.name || 'Student',
         phoneNumber: user?.phone || '',
         subject,

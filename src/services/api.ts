@@ -1,5 +1,12 @@
 const API_BASE_URL = 'http://localhost:3001/api';
 
+type SubjectDTO = {
+  _id: string;
+  name: string;
+  description?: string;
+  chapters: Array<{ _id: string; title: string; topics: Array<{ _id: string; title: string; description?: string }> }>;
+};
+
 class ApiService {
   private token: string | null = null;
 
@@ -91,7 +98,12 @@ class ApiService {
 
   // User management methods
   async createUser(userData: { name: string; phone: string; role: string }) {
-    return this.request('/users', {
+    return this.request<{
+      message: string;
+      userId: string;
+      password: string;
+      user: { id: string; name: string; phone: string; role: string };
+    }>('/users', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
@@ -126,7 +138,7 @@ class ApiService {
 
   // Subject methods
   async getSubjects() {
-    return this.request('/subjects/list');
+    return this.request<SubjectDTO[]>('/subjects/list');
   }
 
   async getSubjectById(id: string) {
@@ -141,7 +153,7 @@ class ApiService {
   }
 
   async getChapters(subjectId: string) {
-    return this.request(`/subjects/chapters/${subjectId}`);
+    return this.request<Array<{ _id: string; title: string }>>(`/subjects/chapters/${subjectId}`);
   }
 
   async addChapter(subjectId: string, chapterData: { title: string }) {
@@ -178,7 +190,7 @@ class ApiService {
     chapter: string;
     topic?: string;
   }) {
-    return this.request('/sessions', {
+    return this.request<{ _id: string } & Record<string, any>>('/sessions', {
       method: 'POST',
       body: JSON.stringify(sessionData),
     });

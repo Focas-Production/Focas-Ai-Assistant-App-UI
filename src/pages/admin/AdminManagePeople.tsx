@@ -5,6 +5,7 @@ import { apiService } from '../../services/api';
 // Interface for a person's data
 interface Person {
   _id: string; // Changed from id to _id to match MongoDB
+  id?: string; // Optional fallback id used in some code paths
   name: string;
   phone_number: string;
   role: string;
@@ -120,7 +121,7 @@ const AdminManagePeople: React.FC<AdminManagePeopleProps> = ({ filterRole }) => 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const users = await apiService.getAllUsers();
+      const users = await apiService.getAllUsers() as Person[];
       console.log('Loaded users:', users); // Debug log
       setAllPeople(users);
     } catch (error) {
@@ -391,7 +392,7 @@ const AdminManagePeople: React.FC<AdminManagePeopleProps> = ({ filterRole }) => 
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
                           <button 
-                            onClick={() => handleDelete(person._id || person.id)} 
+                            onClick={() => handleDelete(person._id ?? (person.id as string))} 
                             className="text-red-500 hover:text-red-600 p-2" 
                             title="Delete"
                             disabled={loading}
