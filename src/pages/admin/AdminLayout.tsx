@@ -1,44 +1,38 @@
 import React, { useState } from 'react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
-import Dashboard from './AdminManagePeople';
-import StudentDetails from './AdminStudentDetails';
+import AdminManagePeople from './AdminManagePeople';
 import AdminStudentview from './AdminStudentview';
-import AdminDetails from './AdminDetails';
-import TutorDetails from './AdminTutorDetails';
 import AdminTutorview from './AdminTutorview';
 import TutorSessionview from '../tutor/TutorSessionview';
 import StudentReport from '../student/StudentReport';
 import Sidebar from "../../components/layout/Sidebar";
 import Navbar from "../../components/layout/Navbar";
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [activeLink, setActiveLink] = useState('Manage People');
   const navigate = useNavigate();
-  
-
-
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    // Only clear user authentication data, preserve all other data
-    localStorage.removeItem('userInfo');
-    // Keep all other data: adminPeopleData, etc.
+    logout();
     navigate('/login');
   };
 
   const renderContent = () => {
-    // Handle normal admin navigation
+    // All user management goes through AdminManagePeople with filtering
     switch (activeLink) {
       case 'Manage People':
-        return <Dashboard />;
+        return <AdminManagePeople filterRole="all" />;
       case 'Students':
-        return <StudentDetails />;
+        return <AdminManagePeople filterRole="student" />;
       case 'Admins':
-        return <AdminDetails />;
+        return <AdminManagePeople filterRole="admin" />;
       case 'Tutors':
-        return <TutorDetails />;
+        return <AdminManagePeople filterRole="tutor" />;
       default:
-        return <Dashboard />;
+        return <AdminManagePeople filterRole="all" />;
     }
   };
 

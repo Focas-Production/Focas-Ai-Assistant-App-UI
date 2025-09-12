@@ -1,13 +1,7 @@
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-
-interface Person {
-  id: number;
-  name: string;
-  phoneNumber: string;
-  role: string;
-}
+import { useAuth } from "../../contexts/AuthContext";
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,55 +9,33 @@ const LoginPage: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
-    // Get admin people data from localStorage
-    const adminPeopleData = localStorage.getItem('adminPeopleData');
-    let people: Person[] = [];
-    
-    if (adminPeopleData) {
-      people = JSON.parse(adminPeopleData);
-    }
-
-    // Check if person exists in the admin list
-    const person = people.find(p => 
-      p.name.toLowerCase() === name.toLowerCase() && 
-      p.phoneNumber === phoneNumber
-    );
-
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await login(name, phoneNumber, password);
       
-      if (!person) {
-        alert("Person not found! Please check your name and phone number, or contact admin to be added to the system.");
-        return;
+      // Navigate based on role
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      if (userInfo.role?.toLowerCase() === "student") {
+        navigate("/student");
+      } else if (userInfo.role?.toLowerCase() === "tutor") {
+        navigate("/tutor");
+      } else if (userInfo.role?.toLowerCase() === "admin") {
+        navigate("/admin");
       }
-
-      // Check if password matches the person's role
-      if (password.toLowerCase() === person.role.toLowerCase()) {
-        // Store user info in localStorage
-        localStorage.setItem("userInfo", JSON.stringify({
-          name: person.name,
-          phoneNumber: person.phoneNumber,
-          role: person.role
-        }));
-        
-        // Navigate based on role
-        if (person.role.toLowerCase() === "student") {
-          navigate("/student");
-        } else if (person.role.toLowerCase() === "tutor") {
-          navigate("/tutor");
-        } else if (person.role.toLowerCase() === "admin") {
-          navigate("/admin");
-        }
-      } else {
-        alert(`Invalid password! Use '${person.role.toLowerCase()}' as password for ${person.name}.`);
-      }
-    }, 2000);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      setError(error.message || "Login failed. Please check your credentials and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,6 +60,12 @@ const LoginPage: React.FC = () => {
           <img src="src/assets/logo.png" alt="FOCAS Logo" className="w-28" />
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
         
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -99,6 +77,7 @@ const LoginPage: React.FC = () => {
             onChange={(e) => setName(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 bg-[#fafafa] text-sm transition"
             required
+            disabled={loading}
           />
 
           <input
@@ -108,6 +87,7 @@ const LoginPage: React.FC = () => {
             onChange={(e) => setPhoneNumber(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 bg-[#fafafa] text-sm transition"
             required
+            disabled={loading}
           />
 
           <div className="relative">
@@ -118,6 +98,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 bg-[#fafafa] text-sm transition"
               required
+              disabled={loading}
             />
             <div
               onClick={() => setShowPassword(!showPassword)}
@@ -126,8 +107,6 @@ const LoginPage: React.FC = () => {
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </div>
           </div>
-
-          
 
           <div className="flex justify-end text-xs text-blue-600 font-medium">
             <a href="/forgot-password" className="hover:underline">Forgot password?</a>
@@ -144,10 +123,6 @@ const LoginPage: React.FC = () => {
             {loading ? "Signing in..." : "Login"}
           </button>
         </form>
-
-        
-        
-        
 
       </div>
     </div>

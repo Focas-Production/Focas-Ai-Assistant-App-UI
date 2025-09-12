@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 // --- Mock Session Manager (Placeholder for the missing utility) ---
 const sessionManager = {
@@ -42,7 +44,22 @@ interface CustomDropdownProps {
   onChange: (value: string) => void;
   placeholder: string;
   error?: string;
-  onFocus?: () => void; // <-- added
+  onFocus?: () => void;
+}
+
+interface Subject {
+  _id: string;
+  name: string;
+  description?: string;
+  chapters: Array<{
+    _id: string;
+    title: string;
+    topics: Array<{
+      _id: string;
+      title: string;
+      description?: string;
+    }>;
+  }>;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({ label, options, value, onChange, placeholder, error, onFocus }) => {
@@ -55,8 +72,8 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ label, options, value, 
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleSelect = (option: string) => {
@@ -64,47 +81,35 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ label, options, value, 
     setIsOpen(false);
   };
 
-  const handleToggle = () => {
-    setIsOpen(!isOpen);
-    onFocus?.(); // clear the error when clicked
-  };
-
   return (
-    <div className="relative" ref={dropdownRef}>
-      <label className="block text-gray-700 font-medium mb-2">{label}</label>
-      <div className="relative">
+    <div className="w-full">
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <div className="relative" ref={dropdownRef}>
         <button
           type="button"
-          onClick={handleToggle}
-          className={`w-full text-left px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 flex justify-between items-center ${error ? 'border-red-500' : 'border-blue-600'}`}
+          onClick={() => setIsOpen(!isOpen)}
+          onFocus={onFocus}
+          className={`w-full px-4 py-3 border rounded-xl text-left transition-colors duration-200 ${
+            error ? 'border-red-500' : 'border-gray-300 hover:border-blue-400'
+          } ${isOpen ? 'border-blue-500' : ''}`}
         >
-          <span className={value ? 'text-gray-800' : 'text-gray-500'}>
-            {value || placeholder}
+          <span className={value ? 'text-gray-800' : 'text-gray-500'}>{value || placeholder}</span>
+          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            {isOpen ? '▲' : '▼'}
           </span>
-         <svg
-          className="w-4 h-4 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-
         </button>
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-blue-600 rounded-lg shadow-lg z-20">
-            <div className="py-1">
-              {options.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  className="w-full px-4 py-2 text-left hover:bg-blue-50 text-gray-800"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+            {options.map((option, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleSelect(option)}
+                className="w-full px-4 py-2 text-left hover:bg-blue-50 text-gray-800"
+              >
+                {option}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -115,12 +120,75 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ label, options, value, 
 
 // --- Main Allocation Component ---
 const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
+  const { user } = useAuth();
   const [subject, setSubject] = useState('');
   const [chapter, setChapter] = useState('');
   const [session, setSession] = useState('');
   const [room, setRoom] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+  
+  // Database data states
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [chapters, setChapters] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
 
+  // Session and room options (these can be hardcoded or fetched from config)
+  const sessionOptions = ["6am - 9am", "10am - 1pm", "2pm - 5pm", "7pm - 10pm"];
+  const roomOptions = ["Room 1", "Room 2"];
+
+  // Fetch subjects from database
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getSubjects();
+        setSubjects(response);
+        console.log('Fetched subjects from database:', response);
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+        // Fallback to hardcoded subjects if API fails
+        setSubjects([
+          { _id: '1', name: 'Tax', description: 'Taxation', chapters: [] },
+          { _id: '2', name: 'Account', description: 'Accounting', chapters: [] },
+          { _id: '3', name: 'Finance', description: 'Finance', chapters: [] }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
+  // Fetch chapters when subject changes
+  useEffect(() => {
+    const fetchChapters = async () => {
+      if (!selectedSubjectId) {
+        setChapters([]);
+        setChapter('');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await apiService.getChapters(selectedSubjectId);
+        const chapterTitles = response.map((ch: any) => ch.title);
+        setChapters(chapterTitles);
+        console.log('Fetched chapters for subject:', chapterTitles);
+      } catch (error) {
+        console.error('Error fetching chapters:', error);
+        // Fallback to hardcoded chapters
+        setChapters(["Chapter 1", "Chapter 2", "Chapter 3"]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChapters();
+  }, [selectedSubjectId]);
+
+  // Load saved data on component mount
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     const savedAllocationData = localStorage.getItem('studentAllocationData');
@@ -136,7 +204,20 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubjectChange = (selectedSubject: string) => {
+    setSubject(selectedSubject);
+    setChapter(''); // Reset chapter when subject changes
+    
+    // Find the subject ID
+    const foundSubject = subjects.find(s => s.name === selectedSubject);
+    if (foundSubject) {
+      setSelectedSubjectId(foundSubject._id);
+    }
+    
+    setErrors(prev => ({ ...prev, subject: undefined }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: FormErrors = {};
     if (!subject) newErrors.subject = "Please select a subject.";
@@ -147,43 +228,73 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    const userInfo = localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')!) : null;
-    const studentName = userInfo ? userInfo.name : 'Student';
-    const currentDate = new Date().toLocaleDateString('en-GB');
-    let tutorName = '';
-    if (userInfo && userInfo.role === 'tutor') tutorName = userInfo.name;
-    // If you have a way to assign a tutor to a student, set tutorName accordingly
+    try {
+      setLoading(true);
+      
+      // Create session in database
+      const sessionData = {
+        studentName: user?.name || 'Student',
+        date: new Date().toLocaleDateString('en-GB'),
+        session,
+        room,
+        subject,
+        chapter,
+        studentId: user?.id || '',
+        tutorId: '', // You can assign a tutor here if needed
+      };
 
-    const studentInfo = {
-      id: Date.now(),
-      name: studentName,
-      phoneNumber: userInfo ? userInfo.phoneNumber : '',
-      subject,
-      chapter,
-      session,
-      room,
-      date: currentDate,
-      tutorName // <-- add this line
-    };
+      const newSession = await apiService.createSession(sessionData);
+      console.log('Session created in database:', newSession);
 
-    const existingStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
-    const updatedStudents = [...existingStudents, studentInfo];
-    localStorage.setItem('sessionStudents', JSON.stringify(updatedStudents));
+      // Also save to localStorage for backward compatibility
+      const studentInfo = {
+        id: newSession._id || Date.now(),
+        name: user?.name || 'Student',
+        phoneNumber: user?.phone || '',
+        subject,
+        chapter,
+        session,
+        room,
+        date: new Date().toLocaleDateString('en-GB'),
+        tutorName: ''
+      };
 
-    const allocationDataWithDate = { subject, chapter, session, room, date: currentDate };
-    localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
+      const existingStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
+      const updatedStudents = [...existingStudents, studentInfo];
+      localStorage.setItem('sessionStudents', JSON.stringify(updatedStudents));
 
-    const newSession = sessionManager.startSession({
-      studentName,
-      date: currentDate,
-      session,
-      room,
-      subject,
-      chapter
-    });
+      const allocationDataWithDate = { subject, chapter, session, room, date: new Date().toLocaleDateString('en-GB') };
+      localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
 
-    console.log('Started new session with ID:', newSession.sessionId);
-    onSubmit?.({ subject, chapter, session, room });
+      console.log('Session data saved to localStorage as well');
+      onSubmit?.({ subject, chapter, session, room });
+      
+    } catch (error) {
+      console.error('Error creating session:', error);
+      // Fallback to localStorage only
+      const studentInfo = {
+        id: Date.now(),
+        name: user?.name || 'Student',
+        phoneNumber: user?.phone || '',
+        subject,
+        chapter,
+        session,
+        room,
+        date: new Date().toLocaleDateString('en-GB'),
+        tutorName: ''
+      };
+
+      const existingStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
+      const updatedStudents = [...existingStudents, studentInfo];
+      localStorage.setItem('sessionStudents', JSON.stringify(updatedStudents));
+
+      const allocationDataWithDate = { subject, chapter, session, room, date: new Date().toLocaleDateString('en-GB') };
+      localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
+
+      onSubmit?.({ subject, chapter, session, room });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -197,31 +308,39 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
           ×
         </button>
         <h2 className="text-xl font-bold text-gray-800 mb-6 text-center">Student Allocation</h2>
+        
+        {loading && (
+          <div className="text-center mb-4">
+            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <p className="text-sm text-gray-600 mt-2">Loading data...</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
           
           <CustomDropdown 
             label="Subject"
-            options={["Tax", "Account", "Finance"]}
+            options={subjects.map(s => s.name)}
             value={subject}
-            onChange={setSubject}
-            placeholder="Select subject"
+            onChange={handleSubjectChange}
+            placeholder={loading ? "Loading subjects..." : "Select subject"}
             error={errors.subject}
             onFocus={() => setErrors(prev => ({ ...prev, subject: undefined }))}
           />
 
           <CustomDropdown 
             label="Chapter"
-            options={["Chapter 1", "Chapter 2", "Chapter 3"]}
+            options={chapters}
             value={chapter}
             onChange={setChapter}
-            placeholder="Select chapter"
+            placeholder={loading ? "Loading chapters..." : "Select chapter"}
             error={errors.chapter}
             onFocus={() => setErrors(prev => ({ ...prev, chapter: undefined }))}
           />
 
           <CustomDropdown 
             label="Session"
-            options={["6am - 9am", "10am - 1pm", "2pm - 5pm", "7pm - 10pm"]}
+            options={sessionOptions}
             value={session}
             onChange={setSession}
             placeholder="Select session"
@@ -231,7 +350,7 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
 
           <CustomDropdown 
             label="Room"
-            options={["Room 1", "Room 2"]}
+            options={roomOptions}
             value={room}
             onChange={setRoom}
             placeholder="Select room"
@@ -241,9 +360,10 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
           
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg text-lg mt-2 transition"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-xl shadow-lg text-lg mt-2 transition"
           >
-            Submit
+            {loading ? 'Creating Session...' : 'Submit'}
           </button>
         </form>
       </div>
