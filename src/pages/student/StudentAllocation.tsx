@@ -217,85 +217,132 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
     setErrors(prev => ({ ...prev, subject: undefined }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: FormErrors = {};
-    if (!subject) newErrors.subject = "Please select a subject.";
-    if (!chapter) newErrors.chapter = "Please select a chapter.";
-    if (!session) newErrors.session = "Please select a session.";
-    if (!room) newErrors.room = "Please select a room.";
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const newErrors: FormErrors = {};
+  //   if (!subject) newErrors.subject = "Please select a subject.";
+  //   if (!chapter) newErrors.chapter = "Please select a chapter.";
+  //   if (!session) newErrors.session = "Please select a session.";
+  //   if (!room) newErrors.room = "Please select a room.";
 
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+  //   setErrors(newErrors);
+  //   if (Object.keys(newErrors).length > 0) return;
 
-    try {
-      setLoading(true);
+  //   try {
+  //     setLoading(true);
       
-      // Create session in database
-      const sessionData = {
-        studentName: user?.name || 'Student',
-        date: new Date().toLocaleDateString('en-GB'),
-        session,
-        room,
-        subject,
-        chapter,
-        studentId: user?.id || '',
-        tutorId: '', // You can assign a tutor here if needed
-      };
+  //     // Create session in database
+  //     const sessionData = {
+  //       studentName: user?.name || 'Student',
+  //       date: new Date().toLocaleDateString('en-GB'),
+  //       session,
+  //       room,
+  //       subject,
+  //       chapter,
+  //       studentId: user?.id || '',
+  //       tutorId: '', // You can assign a tutor here if needed
+  //     };
 
-      const newSession = await apiService.createSession(sessionData);
-      console.log('Session created in database:', newSession);
+  //     const newSession = await apiService.createSession(sessionData);
+  //     console.log('Session created in database:', newSession);
 
-      // Also save to localStorage for backward compatibility
-      const studentInfo = {
-        id: (newSession as { _id?: string })._id || Date.now(),
-        name: user?.name || 'Student',
-        phoneNumber: user?.phone || '',
-        subject,
-        chapter,
-        session,
-        room,
-        date: new Date().toLocaleDateString('en-GB'),
-        tutorName: ''
-      };
+  //     // Also save to localStorage for backward compatibility
+  //     const studentInfo = {
+  //       id: (newSession as { _id?: string })._id || Date.now(),
+  //       name: user?.name || 'Student',
+  //       phoneNumber: user?.phone || '',
+  //       subject,
+  //       chapter,
+  //       session,
+  //       room,
+  //       date: new Date().toLocaleDateString('en-GB'),
+  //       tutorName: ''
+  //     };
 
-      const existingStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
-      const updatedStudents = [...existingStudents, studentInfo];
-      localStorage.setItem('sessionStudents', JSON.stringify(updatedStudents));
+  //     const existingStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
+  //     const updatedStudents = [...existingStudents, studentInfo];
+  //     localStorage.setItem('sessionStudents', JSON.stringify(updatedStudents));
 
-      const allocationDataWithDate = { subject, chapter, session, room, date: new Date().toLocaleDateString('en-GB') };
-      localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
+  //     const allocationDataWithDate = { subject, chapter, session, room, date: new Date().toLocaleDateString('en-GB') };
+  //     localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
 
-      console.log('Session data saved to localStorage as well');
-      onSubmit?.({ subject, chapter, session, room });
+  //     console.log('Session data saved to localStorage as well');
+  //     onSubmit?.({ subject, chapter, session, room });
       
-    } catch (error) {
-      console.error('Error creating session:', error);
-      // Fallback to localStorage only
-      const studentInfo = {
-        id: Date.now(),
-        name: user?.name || 'Student',
-        phoneNumber: user?.phone || '',
-        subject,
-        chapter,
-        session,
-        room,
-        date: new Date().toLocaleDateString('en-GB'),
-        tutorName: ''
-      };
+  //   } catch (error) {
+  //     console.error('Error creating session:', error);
+  //     // Fallback to localStorage only
+  //     const studentInfo = {
+  //       id: Date.now(),
+  //       name: user?.name || 'Student',
+  //       phoneNumber: user?.phone || '',
+  //       subject,
+  //       chapter,
+  //       session,
+  //       room,
+  //       date: new Date().toLocaleDateString('en-GB'),
+  //       tutorName: ''
+  //     };
 
-      const existingStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
-      const updatedStudents = [...existingStudents, studentInfo];
-      localStorage.setItem('sessionStudents', JSON.stringify(updatedStudents));
+  //     const existingStudents = JSON.parse(localStorage.getItem('sessionStudents') || '[]');
+  //     const updatedStudents = [...existingStudents, studentInfo];
+  //     localStorage.setItem('sessionStudents', JSON.stringify(updatedStudents));
 
-      const allocationDataWithDate = { subject, chapter, session, room, date: new Date().toLocaleDateString('en-GB') };
-      localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
+  //     const allocationDataWithDate = { subject, chapter, session, room, date: new Date().toLocaleDateString('en-GB') };
+  //     localStorage.setItem('studentAllocationData', JSON.stringify(allocationDataWithDate));
 
-      onSubmit?.({ subject, chapter, session, room });
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     onSubmit?.({ subject, chapter, session, room });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // src/components/Allocation.tsx (REVISED)
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  // Validation logic remains the same...
+  const newErrors: FormErrors = {};
+  if (!subject) newErrors.subject = "Please select a subject.";
+  if (!chapter) newErrors.chapter = "Please select a chapter.";
+  if (!session) newErrors.session = "Please select a session.";
+  if (!room) newErrors.room = "Please select a room.";
+
+  setErrors(newErrors);
+  if (Object.keys(newErrors).length > 0) return;
+
+  try {
+    setLoading(true);
+    
+    // The only data source we need to update is the database.
+    const sessionData = {
+      studentName: user?.name || 'Student',
+      // The backend expects a proper date format, let's create it properly
+      date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+      session,
+      room,
+      subject,
+      chapter,
+      studentId: user?.id || '', 
+    };
+
+    // This API call creates the session in the database. That's all we need.
+    await apiService.createSession(sessionData);
+    
+    console.log('Session created successfully in the database.');
+
+    // The onSubmit callback will tell the parent component to close the modal 
+    // and refresh its data from the API.
+    onSubmit?.({ subject, chapter, session, room });
+    
+  } catch (error) {
+    console.error('Error creating session:', error);
+    // You might want to show an error message to the user here
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-black/40 flex items-center justify-center z-50">

@@ -107,8 +107,8 @@ const AdminDetails = () => {
               <thead>
                 <tr className="border-b border-white/30 bg-gray-100">
                 <th className="w-1/3 text-left py-4 px-4 text-blue-900 font-semibold text-lg">Name</th>
-<th className="w-1/3 text-left py-4 px-4 text-blue-900 font-semibold text-lg">Phone Number</th>
-<th className="w-1/3 text-left py-4 px-4 text-blue-900 font-semibold text-lg">Action</th>
+                <th className="w-1/3 text-left py-4 px-4 text-blue-900 font-semibold text-lg">Phone Number</th>
+                <th className="w-1/3 text-left py-4 px-4 text-blue-900 font-semibold text-lg">Action</th>
                 </tr>
               </thead>
               <tbody>

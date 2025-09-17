@@ -342,15 +342,15 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       if (correspondingAI && correspondingAI.content) {
         scoredQuestions++;
         // Score based on response quality
-        if (correspondingAI.content.length > 200) totalScore += 2; // Detailed response
-        else if (correspondingAI.content.length > 100) totalScore += 1.5; // Good response
-        else totalScore += 1; // Basic response
+        if (correspondingAI.content.length > 200) totalScore += 2; 
+        else if (correspondingAI.content.length > 100) totalScore += 1.5; 
+        else totalScore += 1; 
       }
     });
     
     if (scoredQuestions === 0) return '0';
     const averageScore = totalScore / scoredQuestions;
-    return Math.min(10, Math.round(averageScore * 2)).toString(); // Scale to 10
+    return Math.min(10, Math.round(averageScore * 2)).toString(); 
   };
 
   const generateSpecificFeedback = (messages: ChatMessage[]) => {
@@ -434,7 +434,6 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       });
     }
 
-    // Overall engagement feedback
     if (userMessages.length >= 5) {
       feedback.push({ 
         emoji: '💪', 

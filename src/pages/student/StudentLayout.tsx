@@ -182,13 +182,15 @@ const StudentLayout: React.FC = () => {
       case 'Allocation':
         return <Allocation onSubmit={handleAllocationSubmit} onSkip={handleSkipAllocation} />;
       case 'Dashboard':
-        return <StudentDashboard allocationData={allocationData} />;
+        // return <StudentDashboard allocationData={allocationData} />;
+        return <StudentDashboard />;
       case 'AI Assistant':
         return <AiAssistant />;
       case 'Sessions':
         return <StudentSessions />;
       default:
-        return <StudentDashboard allocationData={allocationData} />;
+        // return <StudentDashboard allocationData={allocationData} />;
+        return <StudentDashboard />;
     }
   };
 

@@ -1,3 +1,6 @@
+import type { AllocationData } from '../types';
+import type { AllocationData as Session } from '../types';
+
 const API_BASE_URL = 'http://localhost:3001/api';
 
 type SubjectDTO = {
@@ -116,13 +119,21 @@ class ApiService {
     });
   }
 
-  async editUser(userId: string, userData: any) {
-    return this.request(`/users/${userId}`, {
+ async editUser(userId: string, userData: any) {
+    // Specify the shape of the user object it returns
+    return this.request<{ id: string; name: string; phone: string; role: string }>(`/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
   }
 
+ async changePassword(passwordData: { /* ... */ }) {
+    // Update the URL to point to the user route
+    return this.request('/users/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
+    });
+  }
 
   async getStudents() {
     return this.request('/users/students');
@@ -190,7 +201,7 @@ class ApiService {
     chapter: string;
     topic?: string;
   }) {
-    return this.request<{ _id: string } & Record<string, any>>('/sessions', {
+   return this.request<Session>('/sessions', {
       method: 'POST',
       body: JSON.stringify(sessionData),
     });
@@ -200,20 +211,53 @@ class ApiService {
     return this.request('/sessions');
   }
 
-  async getSessionById(id: string) {
-    return this.request(`/sessions/${id}`);
+async getSessionById(id: string) {
+    return this.request<Session>(`/sessions/${id}`);
   }
 
-  async getSessionsByStudent(studentId: string) {
-    return this.request(`/sessions/student/${studentId}`);
+    async getSessionsByStudent(studentId: string) {
+    // This <AllocationData[]> part is CRUCIAL. It fixes the error.
+    return this.request<AllocationData[]>(`/sessions/student/${studentId}`);
   }
 
+  async getSessionsByTutorId(tutorId: string) {
+    // This will return an array of Session objects for the specified tutor
+    return this.request<Session[]>(`/sessions/tutor/${tutorId}`);
+  }
+ 
+  async getStudentsInSession(sessionId: string) {
+    // This will return an array of Session objects for the specified session
+    return this.request<Session[]>(`/sessions/${sessionId}/students`);
+  }
+  
+  async getActiveSessionByStudent(studentId: string) {
+    // This <AllocationData | null> part is CRUCIAL. It fixes the error.
+    return this.request<AllocationData | null>(`/sessions/student/active/${studentId}`);
+  }
+
+  async getActiveStudentsForTutor(tutorId: string) {
+    // This will return an array of Session objects for the tutor's active session
+    return this.request<Session[]>(`/sessions/active/tutor/${tutorId}`);
+  }
+
+  // async updateSession(id: string, sessionData: any) {
+  //   return this.request(`/sessions/${id}`, {
+  //     method: 'PUT',
+  //     body: JSON.stringify(sessionData),
+  //   });
+  // }
   async updateSession(id: string, sessionData: any) {
-    return this.request(`/sessions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(sessionData),
-    });
+  // Specify that this endpoint returns a single Session object
+  return this.request<Session>(`/sessions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(sessionData),
+  });
+}
+
+  async getSessionsByTutor(tutorId: string) {
+    return this.request<Session[]>(`/sessions/tutor/${tutorId}`);
   }
+  
 
   async endSession(sessionId: string) {
     return this.request(`/sessions/end/${sessionId}`, {
