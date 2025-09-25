@@ -187,6 +187,91 @@
 
 // src/pages/tutor/TutorSessionview.tsx (REVISED)
 
+// import { useState, useEffect } from 'react';
+// import { useParams, useNavigate } from 'react-router-dom';
+// import { apiService } from '../../services/api';
+// import type { AllocationData as SessionData } from '../../types';
+
+// const TutorSessionview = () => {
+//   const { sessionId } = useParams<{ sessionId: string }>();
+//   const navigate = useNavigate();
+//   const [session, setSession] = useState<SessionData | null>(null);
+//   const [students, setStudents] = useState<SessionData[]>([]);
+//   const [isLoading, setIsLoading] = useState(true);
+
+//   useEffect(() => {
+//     if (!sessionId) return;
+
+//     const fetchSessionData = async () => {
+//       try {
+//         setIsLoading(true);
+      
+//        const sessionDetails = await apiService.getSessionForTutor(sessionId);
+//         setSession(sessionDetails);
+
+//         // 2. Fetch the students assigned to this session
+//         // Assumes an endpoint like GET /api/sessions/:sessionId/students
+//         const studentList = await apiService.getStudentsInSession(sessionId);
+//         setStudents(studentList);
+//       } catch (error) {
+//         console.error("Failed to load session data:", error);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+//     fetchSessionData();
+//   }, [sessionId]);
+  
+//   const handleViewReport = (studentSession: SessionData) => {
+//       // Navigate using the student's unique session ID
+//       navigate(`/tutor/student-report/${studentSession._id}`);
+//   };
+
+//   if (isLoading) return <div className="p-8">Loading session view...</div>;
+//   if (!session) return <div className="p-8">Session not found.</div>;
+
+//   return (
+//     <div className="p-8">
+//       {/* Session Info Display */}
+//       <div className="bg-white/30 rounded-2xl p-6 mb-6">
+//         <h2 className="text-2xl font-bold">Session Details</h2>
+//         <p>Date: {new Date(session.date).toLocaleDateString('en-GB')}</p>
+//         <p>Session: {session.session}</p>
+//         <p>Room: {session.room}</p>
+//       </div>
+
+//       {/* Students Table */}
+//       <div className="bg-white/30 rounded-2xl overflow-hidden">
+//         <table className="w-full">
+//           <thead>
+//             {/* ... table headers ... */}
+//           </thead>
+//           <tbody>
+//             {students.length > 0 ? (
+//               students.map(student => (
+//                 <tr key={student._id}>
+//                   <td>{student.studentName}</td>
+//                   <td>{student.chapter}</td>
+//                   <td>{student.topic || 'N/A'}</td>
+//                   <td>
+//                     <button onClick={() => handleViewReport(student)}>View</button>
+//                   </td>
+//                 </tr>
+//               ))
+//             ) : (
+//               <tr>
+//                 <td colSpan={5} className="text-center p-8">No students found for this session.</td>
+//               </tr>
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default TutorSessionview;
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
@@ -205,12 +290,9 @@ const TutorSessionview = () => {
     const fetchSessionData = async () => {
       try {
         setIsLoading(true);
-        // 1. Fetch the main session details
-        const sessionDetails = await apiService.getSessionById(sessionId);
+        const sessionDetails = await apiService.getSessionForTutor(sessionId);
         setSession(sessionDetails);
 
-        // 2. Fetch the students assigned to this session
-        // Assumes an endpoint like GET /api/sessions/:sessionId/students
         const studentList = await apiService.getStudentsInSession(sessionId);
         setStudents(studentList);
       } catch (error) {
@@ -221,50 +303,100 @@ const TutorSessionview = () => {
     };
     fetchSessionData();
   }, [sessionId]);
-  
+
   const handleViewReport = (studentSession: SessionData) => {
-      // Navigate using the student's unique session ID
-      navigate(`/tutor/student-report/${studentSession._id}`);
+    navigate(`/tutor/student-report/${studentSession._id}`);
   };
 
-  if (isLoading) return <div className="p-8">Loading session view...</div>;
-  if (!session) return <div className="p-8">Session not found.</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
+        <div className="max-w-4xl mx-auto text-center text-gray-500">
+          Loading session view...
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-8">
+        <div className="max-w-4xl mx-auto text-center text-gray-500">
+          Session not found.
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8">
-      {/* Session Info Display */}
-      <div className="bg-white/30 rounded-2xl p-6 mb-6">
-        <h2 className="text-2xl font-bold">Session Details</h2>
-        <p>Date: {new Date(session.date).toLocaleDateString('en-GB')}</p>
-        <p>Session: {session.session}</p>
-        <p>Room: {session.room}</p>
-      </div>
+    <div className="p-8 min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Session Info */}
+        <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl p-6 mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Session Details</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="text-gray-600 font-medium">Date:</label>
+              <p className="text-gray-800 font-semibold">
+                {new Date(session.date).toLocaleDateString('en-GB')}
+              </p>
+            </div>
+            <div>
+              <label className="text-gray-600 font-medium">Session:</label>
+              <p className="text-gray-800 font-semibold">{session.session}</p>
+            </div>
+            <div>
+              <label className="text-gray-600 font-medium">Room:</label>
+              <p className="text-gray-800 font-semibold">{session.room}</p>
+            </div>
+          </div>
+        </div>
 
-      {/* Students Table */}
-      <div className="bg-white/30 rounded-2xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            {/* ... table headers ... */}
-          </thead>
-          <tbody>
-            {students.length > 0 ? (
-              students.map(student => (
-                <tr key={student._id}>
-                  <td>{student.studentName}</td>
-                  <td>{student.chapter}</td>
-                  <td>{student.topic || 'N/A'}</td>
-                  <td>
-                    <button onClick={() => handleViewReport(student)}>View</button>
-                  </td>
+        {/* Students Table */}
+        <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/30 bg-gray-100">
+                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Name</th>
+                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Chapter</th>
+                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Topic</th>
+                  <th className="text-left py-4 px-4 text-gray-700 font-semibold text-lg">Action</th>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="text-center p-8">No students found for this session.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {students.length > 0 ? (
+                  students.map((student, index) => (
+                    <tr
+                      key={student._id}
+                      className={`${index < students.length - 1 ? 'border-b border-black/10' : ''} hover:bg-white/20 transition-colors duration-200 cursor-pointer bg-white`}
+                    >
+                      <td className="py-4 px-4 text-gray-800 font-medium">{student.studentName}</td>
+                      <td className="py-4 px-4 text-gray-700">{student.chapter || 'N/A'}</td>
+                      <td className="py-4 px-4 text-gray-700">{student.topic || 'N/A'}</td>
+                      <td className="py-4 px-4">
+                        <button
+                          onClick={() => handleViewReport(student)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-md"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-8 px-4 text-center text-gray-500">
+                      No students found for this session.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   );

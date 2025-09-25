@@ -1,5 +1,6 @@
 import type { AllocationData } from '../types';
 import type { AllocationData as Session } from '../types';
+import type { SessionData } from '../types';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
@@ -65,21 +66,49 @@ class ApiService {
     return response;
   }
 
-  async simpleLogin(name: string, phoneNumber: string, password: string) {
-    const response = await this.request<{
-      token: string;
-      user: { id: string; name: string; phone: string; role: string };
-    }>('/auth/simple-login', {
-      method: 'POST',
-      body: JSON.stringify({ name, phoneNumber, password }),
-    });
+  // async simpleLogin(name: string, phoneNumber: string, password: string) {
+  //   const response = await this.request<{
+  //     token: string;
+  //     user: { id: string; name: string; phone: string; role: string };
+  //   }>('/auth/simple-login', {
+  //     method: 'POST',
+  //     body: JSON.stringify({ name, phoneNumber, password }),
+  //   });
 
-    this.token = response.token;
-    localStorage.setItem('authToken', response.token);
-    localStorage.setItem('userInfo', JSON.stringify(response.user));
+  //   this.token = response.token;
+  //   localStorage.setItem('authToken', response.token);
+  //   localStorage.setItem('userInfo', JSON.stringify(response.user));
     
-    return response;
-  }
+  //   return response;
+  // }
+
+  // Inside the ApiService class
+
+async simpleLogin(name: string, phoneNumber: string, password: string) {
+  console.log('--- STEP 1: Starting simpleLogin function ---');
+  
+  const response = await this.request<{
+    token: string;
+    user: { id: string; name: string; phone: string; role: string };
+  }>('/auth/simple-login', {
+    method: 'POST',
+    body: JSON.stringify({ name, phoneNumber, password }),
+  });
+
+  console.log('--- STEP 2: Received response from server ---', response);
+  console.log('--- STEP 3: This is the user object from the server ---', response.user);
+  console.log("--- STEP 4: Now attempting to save this object to localStorage... ---");
+
+  // This is the most important line
+  localStorage.setItem('userInfo', JSON.stringify(response.user));
+
+  console.log('--- STEP 5: UserInfo has been SAVED to localStorage! ---');
+
+  this.token = response.token;
+  localStorage.setItem('authToken', response.token);
+  
+  return response;
+}
 
   async register(name: string, phone: string, role: string, password?: string) {
     return this.request('/auth/register', {
@@ -211,9 +240,14 @@ class ApiService {
     return this.request('/sessions');
   }
 
-async getSessionById(id: string) {
-    return this.request<Session>(`/sessions/${id}`);
-  }
+async getSessionById(id: string): Promise<SessionData> {
+  return this.request<SessionData>(`/sessions/${id}`);
+}
+
+  async getSessionForTutor(sessionId: string) {
+  // This calls the new route you created: /api/sessions/tutor-view/:id
+  return this.request<Session>(`/sessions/tutor-view/${sessionId}`);
+}
 
     async getSessionsByStudent(studentId: string) {
     // This <AllocationData[]> part is CRUCIAL. It fixes the error.

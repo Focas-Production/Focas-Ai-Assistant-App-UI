@@ -386,27 +386,66 @@ const TutorSessions: React.FC = () => {
   //   fetchTutorSessions();
   // }, []);
 
+// useEffect(() => {
+//   const fetchTutorSessions = async () => {
+//     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+//     if (!userInfo.id) {
+//       setIsLoading(false);
+//       return;
+//     }
+//     try {
+//       setIsLoading(true);
+//       // Ensure you are calling the correct, single function name
+//       const tutorSessions = await apiService.getSessionsByTutor(userInfo.id);
+//       setSessions(tutorSessions);
+//     } catch (error) {
+//       console.error("Failed to fetch tutor sessions:", error);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+//   fetchTutorSessions();
+// }, []);
+  
 useEffect(() => {
   const fetchTutorSessions = async () => {
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-    if (!userInfo.id) {
+    console.log("1. Component is ready. Starting to fetch sessions...");
+
+    const userInfoString = localStorage.getItem('userInfo');
+    console.log("2. Raw data from localStorage for 'userInfo':", userInfoString);
+
+    if (!userInfoString) {
+      console.error("ERROR: No 'userInfo' found in localStorage. Cannot fetch sessions.");
       setIsLoading(false);
       return;
     }
+
+    const userInfo = JSON.parse(userInfoString);
+    console.log("3. Parsed userInfo object:", userInfo);
+    console.log("4. Trying to find the user ID using 'userInfo.id':", userInfo.id);
+
+    // This is the most important check
+    if (!userInfo.id) {
+      console.error("ERROR: User ID not found in the userInfo object! Halting API call.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      // Ensure you are calling the correct, single function name
+      console.log(`5. User ID is ${userInfo.id}. Calling the API to get sessions...`);
       const tutorSessions = await apiService.getSessionsByTutor(userInfo.id);
+      console.log("6. SUCCESS: Received sessions from API:", tutorSessions);
       setSessions(tutorSessions);
     } catch (error) {
-      console.error("Failed to fetch tutor sessions:", error);
+      console.error("7. API ERROR: The request to the database failed.", error);
     } finally {
       setIsLoading(false);
     }
   };
+
   fetchTutorSessions();
 }, []);
-  
 
   // --- Event Handlers ---
   const handleViewSession = (sessionId: string) => {

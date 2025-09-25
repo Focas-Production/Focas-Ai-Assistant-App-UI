@@ -18,3 +18,22 @@ export interface AllocationData {
   status?: string;
   timer?: TimerState; 
 }
+
+export interface SessionData {
+  _id: string; // From MongoDB or your database
+  date: string;
+  session: string;
+  room: string;
+  messages: ChatMessage[]; // An array of messages
+}
+
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  // These are optional to support different message formats
+  inputMode?: 'text' | 'voice' | 'file';
+  file?: { type: string };
+}
+

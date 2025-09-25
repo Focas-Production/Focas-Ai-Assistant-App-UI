@@ -455,12 +455,227 @@
 
 // export default TutorSprint;
 
+// import { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import { apiService } from '../../services/api';
+// import type { AllocationData as SprintData } from '../../types';
+
+// // Define a more specific type for the timer object if it's part of your data model
+// interface TimerState {
+//   isRunning: boolean;
+//   time: number;
+//   startTime: number | null;
+//   duration: number; // in minutes
+// }
+
+// // These can be moved to a config file
+// const TOPIC_OPTIONS = ["Company Accounts", "Profit and Loss", "Accounting standards"];
+// const STATUS_OPTIONS = ["pending", "completed", "come to live"];
+
+// const TutorSprint = () => {
+//   const [sprints, setSprints] = useState<SprintData[]>([]);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const navigate = useNavigate();
+
+//   // --- Data Fetching ---
+//   useEffect(() => {
+//     const fetchActiveStudents = async () => {
+//       const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+//       if (!userInfo._id) {
+//         setIsLoading(false);
+//         return;
+//       }
+
+//       try {
+//         // This single API call gets students in the tutor's currently active session
+//         const activeSprints = await apiService.getActiveStudentsForTutor(userInfo._id);
+//         setSprints(activeSprints);
+//       } catch (error) {
+//         console.error("Failed to fetch active students:", error);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchActiveStudents();
+//     // Poll for updates every 15 seconds
+//     const interval = setInterval(fetchActiveStudents, 15000);
+//     return () => clearInterval(interval);
+//   }, []);
+
+//   // --- Client-Side Timer for UI Feedback ---
+//   useEffect(() => {
+//     const interval = setInterval(() => {
+//       setSprints(prevSprints =>
+//         prevSprints.map(sprint => {
+//           if (sprint.timer?.isRunning && sprint.timer?.startTime) {
+//             const elapsed = Math.floor((Date.now() - sprint.timer.startTime) / 1000);
+//             const maxTime = (sprint.timer.duration || 0) * 60;
+            
+//             if (elapsed >= maxTime) {
+//               // Timer finished, update state visually
+//               return { ...sprint, timer: { ...sprint.timer, isRunning: false, time: maxTime } };
+//             }
+//             return { ...sprint, timer: { ...sprint.timer, time: elapsed } };
+//           }
+//           return sprint;
+//         })
+//       );
+//     }, 1000);
+//     return () => clearInterval(interval);
+//   }, []);
+
+//   // --- Event Handlers ---
+//   const handleUpdateSprint = async (sprintId: string, updatedData: Partial<SprintData>) => {
+//     try {
+//       // Optimistic UI update for a snappy experience
+//       setSprints(prev => prev.map(s => s._id === sprintId ? { ...s, ...updatedData } : s));
+//       // Send the update to the backend
+//       await apiService.updateSession(sprintId, updatedData);
+//     } catch (error) {
+//       console.error("Failed to update sprint:", error);
+//       // Optional: Add logic to revert the UI change on API error
+//     }
+//   };
+
+//   const handleTopicChange = (sprintId: string, newTopic: string) => {
+//     handleUpdateSprint(sprintId, { topic: newTopic });
+//   };
+
+//   const handleStatusChange = (sprintId: string, newStatus: string) => {
+//     handleUpdateSprint(sprintId, { status: newStatus });
+//   };
+
+//   const handleTimerToggle = (sprint: SprintData) => {
+//     const timer = sprint.timer || { isRunning: false, time: 0, duration: 5, startTime: null };
+//     const isRunning = !timer.isRunning;
+//     const newTimerState: TimerState = {
+//       ...timer,
+//       isRunning,
+//       startTime: isRunning ? Date.now() - (timer.time * 1000) : null,
+//     };
+//     handleUpdateSprint(sprint._id, { timer: newTimerState });
+//   };
+  
+//   const handleTimerDurationChange = (sprint: SprintData, duration: number) => {
+//       const newTimerState: TimerState = {
+//           ...(sprint.timer || { time: 0, isRunning: false, startTime: null }),
+//           duration: duration,
+//           time: 0, // Reset time on duration change
+//           isRunning: false,
+//           startTime: null,
+//       };
+//       handleUpdateSprint(sprint._id, { timer: newTimerState });
+//   };
+
+//   const handleFeedbackClick = (sprint: SprintData) => {
+//     navigate(`/tutor/student-report/${sprint._id}`);
+//   };
+
+//   // --- Helper Functions ---
+//   const formatTime = (seconds: number = 0) => {
+//     const mins = Math.floor(seconds / 60);
+//     const secs = seconds % 60;
+//     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+//   };
+
+//   if (isLoading) {
+//     return <div className="p-8 text-center">Loading Active Students...</div>;
+//   }
+
+//   return (
+//     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen p-6">
+//       <div className="max-w-7xl mx-auto">
+//         {/* Header */}
+//         <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-6 shadow-sm">
+//           <h1 className="text-3xl font-bold text-blue-700">Tutor Sprint Management</h1>
+//           <p className="text-slate-600">Managing students in the current active session.</p>
+//         </div>
+
+//         {/* Table */}
+//         <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl overflow-hidden">
+//           <div className="overflow-x-auto">
+//             <table className="w-full">
+//               <thead>
+//                 <tr className="bg-gray-100">
+//                   <th className="w-1/5 text-center px-6 py-6 text-lg font-semibold text-blue-900">Name</th>
+//                   <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Topic</th>
+//                   <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Timer</th>
+//                   <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Feedback</th>
+//                   <th className="w-1/5 text-center px-6 py-4 text-lg font-semibold text-blue-900">Status</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {sprints.map((sprint) => (
+//                   <tr key={sprint._id} className="border-b border-gray-200 hover:bg-gray-50">
+//                     <td className="text-center px-6 py-4 text-lg font-medium">{sprint.studentName}</td>
+//                     <td className="text-center px-6 py-4">
+//                       <select
+//                         value={sprint.topic || ''}
+//                         onChange={(e) => handleTopicChange(sprint._id, e.target.value)}
+//                         className="p-2 border rounded focus:outline-none"
+//                       >
+//                         {TOPIC_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
+//                       </select>
+//                     </td>
+//                     <td className="px-6 py-4">
+//                       <div className="flex items-center justify-center gap-2">
+//                         <input
+//                           type="number"
+//                           min="1"
+//                           value={sprint.timer?.duration || 5}
+//                           onChange={(e) => handleTimerDurationChange(sprint, parseInt(e.target.value) || 1)}
+//                           className="w-20 p-2 text-center border rounded"
+//                           disabled={sprint.timer?.isRunning}
+//                         />
+//                         <span className="font-mono text-lg min-w-[60px]">{formatTime(sprint.timer?.time)}</span>
+//                         <button onClick={() => handleTimerToggle(sprint)} title={sprint.timer?.isRunning ? 'Stop' : 'Start'}>
+//                           {sprint.timer?.isRunning ? '❚❚' : '▶'}
+//                         </button>
+//                       </div>
+//                     </td>
+//                     <td className="text-center px-6 py-4">
+//                       <span
+//                         className="cursor-pointer text-blue-600 hover:underline"
+//                         onClick={() => handleFeedbackClick(sprint)}
+//                       >
+//                         View Report
+//                       </span>
+//                     </td>
+//                     <td className="text-center px-6 py-4">
+//                       <select
+//                         value={sprint.status || 'pending'}
+//                         onChange={(e) => handleStatusChange(sprint._id, e.target.value)}
+//                         className="p-2 border rounded focus:outline-none"
+//                       >
+//                         {STATUS_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
+//                       </select>
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </div>
+//         </div>
+
+//         {sprints.length === 0 && !isLoading && (
+//           <div className="text-center py-20">
+//             <h3 className="text-2xl font-bold text-gray-800">No students in your active session</h3>
+//             <p className="text-gray-600">Students will appear here automatically when their session starts.</p>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default TutorSprint;
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
 import type { AllocationData as SprintData } from '../../types';
 
-// Define a more specific type for the timer object if it's part of your data model
 interface TimerState {
   isRunning: boolean;
   time: number;
@@ -468,7 +683,6 @@ interface TimerState {
   duration: number; // in minutes
 }
 
-// These can be moved to a config file
 const TOPIC_OPTIONS = ["Company Accounts", "Profit and Loss", "Accounting standards"];
 const STATUS_OPTIONS = ["pending", "completed", "come to live"];
 
@@ -487,7 +701,6 @@ const TutorSprint = () => {
       }
 
       try {
-        // This single API call gets students in the tutor's currently active session
         const activeSprints = await apiService.getActiveStudentsForTutor(userInfo.id);
         setSprints(activeSprints);
       } catch (error) {
@@ -498,12 +711,11 @@ const TutorSprint = () => {
     };
 
     fetchActiveStudents();
-    // Poll for updates every 15 seconds
     const interval = setInterval(fetchActiveStudents, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  // --- Client-Side Timer for UI Feedback ---
+  // --- Timer for UI ---
   useEffect(() => {
     const interval = setInterval(() => {
       setSprints(prevSprints =>
@@ -511,9 +723,8 @@ const TutorSprint = () => {
           if (sprint.timer?.isRunning && sprint.timer?.startTime) {
             const elapsed = Math.floor((Date.now() - sprint.timer.startTime) / 1000);
             const maxTime = (sprint.timer.duration || 0) * 60;
-            
+
             if (elapsed >= maxTime) {
-              // Timer finished, update state visually
               return { ...sprint, timer: { ...sprint.timer, isRunning: false, time: maxTime } };
             }
             return { ...sprint, timer: { ...sprint.timer, time: elapsed } };
@@ -525,16 +736,13 @@ const TutorSprint = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // --- Event Handlers ---
+  // --- Handlers ---
   const handleUpdateSprint = async (sprintId: string, updatedData: Partial<SprintData>) => {
     try {
-      // Optimistic UI update for a snappy experience
       setSprints(prev => prev.map(s => s._id === sprintId ? { ...s, ...updatedData } : s));
-      // Send the update to the backend
       await apiService.updateSession(sprintId, updatedData);
     } catch (error) {
       console.error("Failed to update sprint:", error);
-      // Optional: Add logic to revert the UI change on API error
     }
   };
 
@@ -556,23 +764,23 @@ const TutorSprint = () => {
     };
     handleUpdateSprint(sprint._id, { timer: newTimerState });
   };
-  
+
   const handleTimerDurationChange = (sprint: SprintData, duration: number) => {
-      const newTimerState: TimerState = {
-          ...(sprint.timer || { time: 0, isRunning: false, startTime: null }),
-          duration: duration,
-          time: 0, // Reset time on duration change
-          isRunning: false,
-          startTime: null,
-      };
-      handleUpdateSprint(sprint._id, { timer: newTimerState });
+    const newTimerState: TimerState = {
+      ...(sprint.timer || { time: 0, isRunning: false, startTime: null }),
+      duration,
+      time: 0,
+      isRunning: false,
+      startTime: null,
+    };
+    handleUpdateSprint(sprint._id, { timer: newTimerState });
   };
 
   const handleFeedbackClick = (sprint: SprintData) => {
     navigate(`/tutor/student-report/${sprint._id}`);
   };
 
-  // --- Helper Functions ---
+  // --- Helpers ---
   const formatTime = (seconds: number = 0) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -588,7 +796,7 @@ const TutorSprint = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-blue-700">Tutor Sprint Management</h1>
+          <h1 className="text-3xl font-bold text-blue-700 mb-2">Tutor Sprint Management</h1>
           <p className="text-slate-600">Managing students in the current active session.</p>
         </div>
 
@@ -606,35 +814,61 @@ const TutorSprint = () => {
                 </tr>
               </thead>
               <tbody>
-                {sprints.map((sprint) => (
-                  <tr key={sprint._id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="text-center px-6 py-4 text-lg font-medium">{sprint.studentName}</td>
-                    <td className="text-center px-6 py-4">
-                      <select
-                        value={sprint.topic || ''}
-                        onChange={(e) => handleTopicChange(sprint._id, e.target.value)}
-                        className="p-2 border rounded focus:outline-none"
-                      >
-                        {TOPIC_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
-                      </select>
+                {sprints.map((sprint, index) => (
+                  <tr
+                    key={sprint._id}
+                    className={`hover:bg-gray-50 transition-colors ${index === sprints.length - 1 ? '' : 'border-b border-gray-200'}`}
+                  >
+                    <td className="text-center px-6 py-4 text-lg font-medium text-gray-900">
+                      {sprint.studentName}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="text-center px-6 py-4">
+                      <div className="inline-flex items-center justify-center">
+                        <select
+                          value={sprint.topic || ''}
+                          onChange={(e) => handleTopicChange(sprint._id, e.target.value)}
+                          className="px-5 py-1 rounded focus:outline-none text-lg"
+                        >
+                          {TOPIC_OPTIONS.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </td>
+                    <td className="text-center px-6 py-4">
+                      <div className="flex items-center justify-center gap-3">
                         <input
                           type="number"
                           min="1"
                           value={sprint.timer?.duration || 5}
                           onChange={(e) => handleTimerDurationChange(sprint, parseInt(e.target.value) || 1)}
-                          className="w-20 p-2 text-center border rounded"
+                          className="w-20 px-3 py-2 text-center focus:outline-none text-lg"
                           disabled={sprint.timer?.isRunning}
+                          placeholder="mins"
                         />
-                        <span className="font-mono text-lg min-w-[60px]">{formatTime(sprint.timer?.time)}</span>
-                        <button onClick={() => handleTimerToggle(sprint)} title={sprint.timer?.isRunning ? 'Stop' : 'Start'}>
-                          {sprint.timer?.isRunning ? '❚❚' : '▶'}
+                        <span className="text-lg text-gray-500">mins</span>
+                        <span className="text-lg font-mono text-gray-700 min-w-[60px]">
+                          {formatTime(sprint.timer?.time)}
+                        </span>
+                        <button
+                          onClick={() => handleTimerToggle(sprint)}
+                          className={`p-2 transition-colors ${sprint.timer?.isRunning ? 'text-red-500 hover:text-red-600' : 'text-green-500 hover:text-green-600'}`}
+                          title={sprint.timer?.isRunning ? 'Stop' : 'Start'}
+                        >
+                          {sprint.timer?.isRunning ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+                              <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <polygon points="5,3 19,12 5,21" fill="currentColor"/>
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </td>
-                    <td className="text-center px-6 py-4">
+                    <td className="text-center px-6 py-4 text-lg text-gray-700">
                       <span
                         className="cursor-pointer text-blue-600 hover:underline"
                         onClick={() => handleFeedbackClick(sprint)}
@@ -643,13 +877,17 @@ const TutorSprint = () => {
                       </span>
                     </td>
                     <td className="text-center px-6 py-4">
-                      <select
-                        value={sprint.status || 'pending'}
-                        onChange={(e) => handleStatusChange(sprint._id, e.target.value)}
-                        className="p-2 border rounded focus:outline-none"
-                      >
-                        {STATUS_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
-                      </select>
+                      <div className="inline-flex items-center justify-center">
+                        <select
+                          value={sprint.status || 'pending'}
+                          onChange={(e) => handleStatusChange(sprint._id, e.target.value)}
+                          className="px-1 py-1 rounded focus:outline-none text-lg"
+                        >
+                          {STATUS_OPTIONS.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -660,8 +898,8 @@ const TutorSprint = () => {
 
         {sprints.length === 0 && !isLoading && (
           <div className="text-center py-20">
-            <h3 className="text-2xl font-bold text-gray-800">No students in your active session</h3>
-            <p className="text-gray-600">Students will appear here automatically when their session starts.</p>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">No students in current session</h3>
+            <p className="text-gray-600">Students will appear here only during their allocated session time.</p>
           </div>
         )}
       </div>

@@ -205,13 +205,11 @@
 
 // export default StudentSessions;
 
-// src/pages/student/StudentSessions.tsx (REVISED AND CORRECTED)
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
 import Pagination from '../../components/common/Pagination';
-import type { AllocationData } from '../../types'; 
+import type { AllocationData } from '../../types';
 
 // User info interface
 interface UserInfo {
@@ -241,11 +239,11 @@ const StudentSessions = () => {
       }
       try {
         setIsLoading(true);
-        // This single API call replaces all the old localStorage logic
+        // Single API call replaces old localStorage/sessionManager logic
         const sessionHistory = await apiService.getSessionsByStudent(user.id);
-        setSessions(sessionHistory);
+        setSessions(sessionHistory || []);
       } catch (error) {
-        console.error("Failed to fetch session history:", error);
+        console.error('Failed to fetch session history:', error);
         setSessions([]);
       } finally {
         setIsLoading(false);
@@ -253,16 +251,19 @@ const StudentSessions = () => {
     };
 
     fetchSessionHistory();
-  }, []); // Runs once on component mount
+  }, []);
 
-const handleViewReport = (session: AllocationData) => {
-  
-  navigate(`/student/report/${session._id}`);
-};
+  const handleViewReport = (session: AllocationData) => {
+    console.log('Navigating to report for session:', session._id);
+    navigate(`/student/report/${session._id}`);
+  };
 
-  // Pagination logic remains the same
+  // Pagination
   const totalItems = sessions.length;
-  const paginatedSessions = sessions.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const paginatedSessions = sessions.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
   if (isLoading) {
     return <div className="p-8 text-center">Loading Session History...</div>;
@@ -271,6 +272,7 @@ const handleViewReport = (session: AllocationData) => {
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto flex-col">
+        {/* Table Container */}
         <div className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden flex-1">
           <div className="overflow-x-auto h-full">
             <table className="w-full">
@@ -285,12 +287,15 @@ const handleViewReport = (session: AllocationData) => {
               <tbody>
                 {paginatedSessions.length > 0 ? (
                   paginatedSessions.map((session, index) => (
-                    <tr 
-                      key={session._id} // Use the unique database ID
-                      className={`${index < paginatedSessions.length - 1 ? 'border-b border-black/10' : ''} hover:bg-white/20 transition-colors duration-200 cursor-pointer`}
+                    <tr
+                      key={session._id}
+                      className={`${
+                        index < paginatedSessions.length - 1 ? 'border-b border-black/10' : ''
+                      } hover:bg-white/20 transition-colors duration-200 cursor-pointer`}
                     >
-                      {/* Format date for display */}
-                      <td className="py-3 px-4 text-gray-800 font-medium">{new Date(session.date).toLocaleDateString('en-GB')}</td>
+                      <td className="py-3 px-4 text-gray-800 font-medium">
+                        {new Date(session.date).toLocaleDateString('en-GB')}
+                      </td>
                       <td className="py-3 px-4 text-gray-700">{session.session}</td>
                       <td className="py-3 px-4 text-gray-700">{session.room}</td>
                       <td className="py-3 px-4">
@@ -306,7 +311,7 @@ const handleViewReport = (session: AllocationData) => {
                 ) : (
                   <tr>
                     <td colSpan={4} className="py-8 px-4 text-center text-gray-500">
-                      No session data found.
+                      No session data found. Please complete your allocation first.
                     </td>
                   </tr>
                 )}
@@ -314,7 +319,7 @@ const handleViewReport = (session: AllocationData) => {
             </table>
           </div>
         </div>
-        
+
         {/* Pagination */}
         <div className="mt-4">
           <Pagination
