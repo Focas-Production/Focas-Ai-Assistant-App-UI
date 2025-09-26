@@ -205,6 +205,7 @@
 
 // export default StudentSessions;
 
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
@@ -258,7 +259,6 @@ const StudentSessions = () => {
     navigate(`/student/report/${session._id}`);
   };
 
-  // Pagination
   const totalItems = sessions.length;
   const paginatedSessions = sessions.slice(
     (currentPage - 1) * rowsPerPage,

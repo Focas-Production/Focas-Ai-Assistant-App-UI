@@ -292,6 +292,18 @@ async getSessionById(id: string): Promise<SessionData> {
     return this.request<Session[]>(`/sessions/tutor/${tutorId}`);
   }
   
+   async getActiveSprintsForTutor(tutorId: string) {
+    // This calls your new sprint controller
+    return this.request<any[]>(`/sprints/active/tutor/${tutorId}`);
+  }
+
+  async updateSprint(sprintId: string, sprintData: any) {
+    // This calls the new sprint update route
+    return this.request<any>(`/sprints/${sprintId}`, {
+      method: 'PUT',
+      body: JSON.stringify(sprintData),
+    });
+  }
 
   async endSession(sessionId: string) {
     return this.request(`/sessions/end/${sessionId}`, {

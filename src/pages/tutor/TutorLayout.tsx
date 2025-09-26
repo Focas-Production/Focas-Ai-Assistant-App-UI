@@ -48,7 +48,7 @@ const TutorLayout: React.FC = () => {
           <Routes>
             <Route path="/" element={renderContent()} />
             <Route path="session-view/:sessionId" element={<TutorSessionview />} />
-            <Route path="student-report" element={<StudentReport />} />
+            <Route path="student-report/:sessionId" element={<StudentReport />} />
           </Routes>
         </main>
       </div>

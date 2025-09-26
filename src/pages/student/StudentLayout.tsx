@@ -216,7 +216,7 @@ const StudentLayout: React.FC = () => {
         <main className="overflow-auto h-full bg-white/60 backdrop-blur-md">
           <Routes>
             <Route path="/" element={renderContent()} />
-            <Route path="/report" element={<StudentReport showSidebar={false} />} />
+            <Route path="report/:sessionId" element={<StudentReport showSidebar={false} />} />
           </Routes>
         </main>
       </div>
