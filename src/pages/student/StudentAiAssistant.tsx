@@ -235,68 +235,25 @@ const StudentAI: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001';
+      const response = await fetch(`${backendUrl}/api/rag/query`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a strict and accurate CA (Chartered Accountant) Exam Evaluator AI.
-              
-              Students will submit only their answers via text or voice. The question is not provided. 
-              
-              IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
-              
-              Your responsibilities:
-              
-              1. Carefully infer the most likely CA-related question based on the student's answer.
-              2. Evaluate the accuracy, completeness, and relevance of their answer in the context of Chartered Accountancy subjects.
-              3. Say whether the answer is correct, partially correct, or incorrect.
-              4. If incorrect or partially correct, provide the correct answer or explanation.
-              5. Give a score out of 10 and an accuracy percentage.
-              6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
-              7. Never make up unrelated questions. Stick strictly to CA context.
-              
-              ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
-              
-              Respond in the following format:
-              
-              ✅ Evaluation: [Your judgment]
-              📘 Inferred Question: [What you think the student was answering]
-              📘 Correction (if any): [Correct answer or missing parts]
-              📊 Score: X/10
-              🎯 Accuracy: Y%`
-            },
-            ...messages.map(msg => ({
-              role: msg.sender === 'user' ? 'user' : 'assistant',
-              content: msg.text
-            })),
-            {
-              role: 'user',
-              content: input
-            }
-          ],
-          max_tokens: 500,
-          temperature: 0.7
+          userMessage: input,
+          // Optionally pass topic as subject hint
+          subject: currentTopic || undefined
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error response:', errorText);
-        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+        throw new Error(`Backend request failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      const aiResponseText = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+      const aiResponseText = data.answer || 'Sorry, I could not generate a response.';
 
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -329,17 +286,30 @@ const StudentAI: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error calling OpenAI API:', error);
+      console.error('Error calling backend:', error);
       const fallbackResponse: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: `I apologize, but I'm having trouble connecting to my knowledge base right now. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again in a moment, or check your internet connection.`,
+        text: `I apologize, but I'm having trouble connecting to the backend right now. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again in a moment, or check your internet connection.`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, fallbackResponse]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1] || '';
+        resolve(base64);
+      };
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(file);
+    });
   };
 
   const processFile = async (file: File) => {
@@ -356,62 +326,64 @@ const StudentAI: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const fileContent = await readFileContent(file);
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a strict and accurate CA (Chartered Accountant) Exam Evaluator AI.
-              
-              Students will submit only their answers via text or voice. The question is not provided. 
-              
-              IMPORTANT: You are currently restricted to evaluate ONLY questions related to: ${currentTopic || 'No specific topic allocated yet'}
-              
-              Your responsibilities:
-              
-              1. Carefully infer the most likely CA-related question based on the student's answer.
-              2. Evaluate the accuracy, completeness, and relevance of their answer in the context of Chartered Accountancy subjects.
-              3. Say whether the answer is correct, partially correct, or incorrect.
-              4. If incorrect or partially correct, provide the correct answer or explanation.
-              5. Give a score out of 10 and an accuracy percentage.
-              6. ${currentTopic ? `ONLY evaluate topics related to: ${currentTopic}. If the student's answer is not related to ${currentTopic}, politely redirect them to focus on ${currentTopic}.` : 'Only evaluate topics from the CA syllabus: accounting, taxation, auditing, law, etc.'}
-              7. Never make up unrelated questions. Stick strictly to CA context.
-              
-              ${currentTopic ? `TOPIC RESTRICTION: You must only evaluate answers related to ${currentTopic}. If the student asks about other topics, politely remind them to focus on ${currentTopic}.` : ''}
-              
-              Respond in the following format:
-              
-              ✅ Evaluation: [Your judgment]
-              📘 Inferred Question: [What you think the student was answering]
-              📘 Correction (if any): [Correct answer or missing parts]
-              📊 Score: X/10
-              🎯 Accuracy: Y%`
-            },
-            {
-              role: 'user',
-              content: `Please analyze this file: ${file.name}\n\nFile content:\n${fileContent}`
-            }
-          ],
-          max_tokens: 800,
-          temperature: 0.7
-        })
-      });
+      const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001';
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+      // 1) OCR the image to text
+      let extractedText = '';
+      if (file.type.startsWith('image/')) {
+        const imageBase64 = await fileToBase64(file);
+        const ocrRes = await fetch(`${backendUrl}/api/ocr`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64 })
+        });
+        if (!ocrRes.ok) throw new Error(`OCR failed: ${ocrRes.status}`);
+        const ocrData = await ocrRes.json();
+        extractedText = ocrData.text || '';
+      } else {
+        extractedText = await readFileContent(file);
       }
 
-      const data = await response.json();
-      const aiResponseText = data.choices[0]?.message?.content || 'Sorry, I could not analyze the file.';
+      // 2) Determine reference answer: use last AI message if present; else ask RAG for a correct answer
+      const findLastAiMessage = () => {
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].sender === 'ai') return messages[i];
+        }
+        return null;
+      };
+
+      let referenceAnswer = findLastAiMessage()?.text || '';
+      if (!referenceAnswer) {
+        const getRefRes = await fetch(`${backendUrl}/api/rag/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userMessage: extractedText || `Please analyze this file: ${file.name}`,
+            subject: currentTopic || undefined
+          })
+        });
+        if (!getRefRes.ok) throw new Error(`Backend request failed: ${getRefRes.status}`);
+        const getRefData = await getRefRes.json();
+        referenceAnswer = getRefData.answer || '';
+      }
+
+      // 3) Evaluate extracted text against reference answer
+      let evaluationText = '';
+      if (referenceAnswer && extractedText) {
+        const evalRes = await fetch(`${backendUrl}/api/evaluate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userAnswer: extractedText,
+            referenceAnswer
+          })
+        });
+        if (!evalRes.ok) throw new Error(`Evaluation failed: ${evalRes.status}`);
+        const evalData = await evalRes.json();
+        evaluationText = evalData.evaluation || '';
+      }
+
+      const aiResponseText = evaluationText || referenceAnswer || 'Sorry, I could not analyze the file.';
 
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
