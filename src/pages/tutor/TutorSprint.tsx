@@ -695,16 +695,107 @@ interface SprintData {
   status?: string;
   timer?: TimerState;
   studentName?: string; // Added by the controller
+  subject?: string;
+  chapter?: string;
 }
 
 // --- END OF FIX ---
 
-const TOPIC_OPTIONS = ["Company Accounts", "Profit and Loss", "Accounting standards"];
+// Map subjects to their topic options
+const SUBJECT_TOPICS: Record<string, string[]> = {
+  // Foundation
+  "Principles and Practice of Accounting": [
+    "Theoretical Framework of Accounting",
+    "Accounting Process",
+    "Financial Statements",
+    "Bank Reconciliation & Depreciation",
+  ],
+  "Business Laws and BCR": [
+    "Business Laws Basics",
+    "Sale of Goods & Contracts",
+    "Correspondence & Reporting",
+  ],
+  "Business Mathematics, LR & Statistics": [
+    "Business Mathematics",
+    "Logical Reasoning",
+    "Statistics",
+  ],
+  "Business Economics & BCK": [
+    "Micro & Macro Economics",
+    "Business & Commercial Knowledge",
+  ],
+  // Intermediate
+  "Advanced Accounting": [
+    "Ind AS Framework",
+    "Presentation & Disclosures",
+    "Consolidation",
+    "Amalgamation & Reconstruction",
+  ],
+  "Corporate and Other Laws": [
+    "Companies Act",
+    "LLP Act",
+    "Other Laws",
+  ],
+  "Taxation": [
+    "Income Tax",
+    "GST",
+  ],
+  "Cost & Management Accounting": [
+    "Cost Sheet",
+    "Process & Service Costing",
+    "Standard & Budgetary Control",
+    "Marginal & ABC",
+  ],
+  "Auditing & Ethics": [
+    "Standards on Auditing",
+    "Audit Process",
+    "Internal Control",
+    "Professional Ethics",
+  ],
+  "Financial Management & Strategic Management": [
+    "FM Basics",
+    "Working Capital",
+    "Investment Decisions",
+    "Strategic Analysis",
+  ],
+  // Final
+  "Financial Reporting": [
+    "Ind AS & Framework",
+    "Consolidation",
+    "Schedule III Disclosures",
+  ],
+  "Advanced Financial Management": [
+    "Risk Management",
+    "Valuation & M&A",
+    "International Finance",
+  ],
+  "Advanced Auditing & Professional Ethics": [
+    "Assurance & Quality Control",
+    "Professional Ethics",
+    "Group Audits",
+  ],
+  "Direct Tax Laws & International Taxation": [
+    "Domestic Tax Planning",
+    "Transfer Pricing & DTAA",
+  ],
+  "Indirect Tax Laws": [
+    "GST In-Depth",
+    "Customs & FTP",
+  ],
+  "Integrated Business Solutions": [
+    "Case Studies",
+    "Strategic Costing",
+    "Corporate & Economic Laws",
+  ],
+};
+
+const DEFAULT_TOPICS = ["Topic 1", "Topic 2", "Topic 3"];
 const STATUS_OPTIONS = ["pending", "active", "paused", "completed"];
 
 const TutorSprint = () => {
   const [sprints, setSprints] = useState<SprintData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
   const navigate = useNavigate();
 
   // --- Data Fetching ---
@@ -729,6 +820,12 @@ const TutorSprint = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Tick every second so timer displays update in real time
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // --- Handlers ---
   const handleUpdateSprint = async (sprintId: string, updatedData: any) => {
     try {
@@ -747,26 +844,30 @@ const TutorSprint = () => {
     handleUpdateSprint(sprintId, { status: newStatus });
   };
 
- const handleTimerToggle = (sprint: SprintData) => {
+  const handleTimerToggle = (sprint: SprintData) => {
     // Safely provide a default timer object if sprint.timer is undefined
     const timer = sprint.timer || { isRunning: false, duration: 5, elapsedSeconds: 0 };
-    
-    const isRunning = !timer.isRunning;
+    const wasRunning = !!timer.isRunning;
+    let elapsedSeconds = timer.elapsedSeconds || 0;
 
-    const updatePayload = {
-        timer: { 
-            ...timer, 
-            isRunning,
-            // Set the startTime when the timer starts
-            startTime: isRunning ? new Date() : undefined
-        }
+    if (wasRunning && timer.startTime) {
+      const startMs = new Date(timer.startTime).getTime();
+      elapsedSeconds += Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+    }
+
+    const isRunning = !wasRunning;
+    const updatedTimer = {
+      ...timer,
+      elapsedSeconds,
+      isRunning,
+      startTime: isRunning ? new Date() : undefined
     };
 
-    handleUpdateSprint(sprint._id, updatePayload);
+    handleUpdateSprint(sprint._id, { timer: updatedTimer });
   };
 
   const handleTimerDurationChange = (sprintId: string, duration: number) => {
-    handleUpdateSprint(sprintId, { timer: { duration, elapsedSeconds: 0, isRunning: false } });
+    handleUpdateSprint(sprintId, { timer: { duration, elapsedSeconds: 0, isRunning: false, startTime: undefined } });
   };
 
   const handleFeedbackClick = (sprint: SprintData) => {
@@ -775,6 +876,12 @@ const TutorSprint = () => {
   };
 
   // --- Helpers ---
+  const getTopicOptionsForSprint = (sprint: SprintData): string[] => {
+    if (sprint.subject && SUBJECT_TOPICS[sprint.subject]) {
+      return SUBJECT_TOPICS[sprint.subject];
+    }
+    return DEFAULT_TOPICS;
+  };
   const formatTime = (sprint: SprintData) => {
     const timer = sprint.timer;
     if (!timer) return '00:00';
@@ -782,13 +889,13 @@ const TutorSprint = () => {
     let totalSeconds = timer.elapsedSeconds || 0;
 
     if (timer.isRunning && timer.startTime) {
-      const timeSinceStart = Math.floor((Date.now() - new Date(timer.startTime).getTime()) / 1000);
-      totalSeconds += timeSinceStart;
+      const timeSinceStart = Math.floor((now - new Date(timer.startTime).getTime()) / 1000);
+      totalSeconds += Math.max(0, timeSinceStart);
     }
 
-    const maxTime = (timer.duration || 0) * 60;
-    if (totalSeconds > maxTime) {
-      totalSeconds = maxTime;
+    if (timer.duration) {
+      const maxTime = timer.duration * 60;
+      totalSeconds = Math.min(totalSeconds, maxTime);
     }
     
     const mins = Math.floor(totalSeconds / 60);
@@ -829,7 +936,7 @@ const TutorSprint = () => {
                     </td>
                     <td className="text-center px-6 py-4">
                       <select value={sprint.topic || ''} onChange={(e) => handleTopicChange(sprint._id, e.target.value)} className="px-5 py-1 rounded focus:outline-none text-lg">
-                        {TOPIC_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
+                        {getTopicOptionsForSprint(sprint).map(option => <option key={option} value={option}>{option}</option>)}
                       </select>
                     </td>
                     <td className="text-center px-6 py-4">

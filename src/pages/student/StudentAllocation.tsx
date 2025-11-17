@@ -2,6 +2,32 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 
+// Level-based curriculum mapping
+const LEVEL_SUBJECTS: Record<string, { name: string; chapters: string[] }[]> = {
+  Foundation: [
+    { name: 'Principles and Practice of Accounting', chapters: ['Theoretical Framework', 'Accounting Process', 'Financial Statements', 'Bank Reconciliation & Depreciation'] },
+    { name: 'Business Laws and BCR', chapters: ['Business Laws Basics', 'Sale of Goods', 'Contracts', 'Correspondence & Reporting'] },
+    { name: 'Business Mathematics, LR & Statistics', chapters: ['Business Mathematics', 'Logical Reasoning', 'Statistics'] },
+    { name: 'Business Economics & BCK', chapters: ['Economics Basics', 'Market Structures', 'Business & Commercial Knowledge'] },
+  ],
+  Intermediate: [
+    { name: 'Advanced Accounting', chapters: ['Ind AS Framework', 'Presentation & Disclosures', 'Consolidation', 'Amalgamation & Reconstruction'] },
+    { name: 'Corporate and Other Laws', chapters: ['Companies Act', 'LLP Act', 'Other Laws'] },
+    { name: 'Taxation', chapters: ['Income Tax', 'GST'] },
+    { name: 'Cost & Management Accounting', chapters: ['Cost Sheet', 'Process & Service Costing', 'Standard & Budgetary Control', 'Marginal & ABC'] },
+    { name: 'Auditing & Ethics', chapters: ['Standards on Auditing', 'Audit Process', 'Internal Control', 'Professional Ethics'] },
+    { name: 'Financial Management & Strategic Management', chapters: ['FM Basics', 'Working Capital', 'Investment Decisions', 'Strategic Analysis'] },
+  ],
+  Final: [
+    { name: 'Financial Reporting', chapters: ['Ind AS & Framework', 'Consolidation', 'Schedule III Disclosures'] },
+    { name: 'Advanced Financial Management', chapters: ['Risk Management', 'Valuation & M&A', 'International Finance'] },
+    { name: 'Advanced Auditing & Professional Ethics', chapters: ['Assurance & Quality Control', 'Professional Ethics', 'Group Audits'] },
+    { name: 'Direct Tax Laws & International Taxation', chapters: ['Domestic Tax Planning', 'Transfer Pricing & DTAA'] },
+    { name: 'Indirect Tax Laws', chapters: ['GST In-Depth', 'Customs & FTP'] },
+    { name: 'Integrated Business Solutions', chapters: ['Case Studies', 'Strategic Costing', 'Corporate & Economic Laws'] },
+  ],
+};
+
 // --- Mock Session Manager (Placeholder for the missing utility) ---
 const sessionManager = {
   startSession: (sessionDetails: {
@@ -137,29 +163,35 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
   const sessionOptions = ["6am - 9am", "10am - 1pm", "2pm - 5pm", "7pm - 10pm"];
   const roomOptions = ["Room 1", "Room 2"];
 
-  // Fetch subjects from database
+  // Initialize subjects from student's level; falls back to API if level is missing
   useEffect(() => {
-    const fetchSubjects = async () => {
-      try {
-        setLoading(true);
-        const response = await apiService.getSubjects();
-        setSubjects(response);
-        console.log('Fetched subjects from database:', response);
-      } catch (error) {
-        console.error('Error fetching subjects:', error);
-        // Fallback to hardcoded subjects if API fails
-        setSubjects([
-          { _id: '1', name: 'Tax', description: 'Taxation', chapters: [] },
-          { _id: '2', name: 'Account', description: 'Accounting', chapters: [] },
-          { _id: '3', name: 'Finance', description: 'Finance', chapters: [] }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSubjects();
-  }, []);
+    const level = (user as any)?.level as string | undefined;
+    const levelData = level ? LEVEL_SUBJECTS[level] : undefined;
+    if (levelData) {
+      // Map to Subject shape for local use
+      setSubjects(
+        levelData.map((s, idx) => ({
+          _id: String(idx + 1),
+          name: s.name,
+          description: '',
+          chapters: s.chapters.map((c, i) => ({ _id: `${idx + 1}-${i + 1}`, title: c, topics: [] })),
+        }))
+      );
+    } else {
+      // No level available; try API as a fallback
+      (async () => {
+        try {
+          setLoading(true);
+          const response = await apiService.getSubjects();
+          if (Array.isArray(response)) setSubjects(response as any);
+        } catch (e) {
+          // ignore; user will see empty and can retry
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+  }, [user]);
 
   // Fetch chapters when subject changes
   useEffect(() => {
@@ -170,23 +202,17 @@ const Allocation: React.FC<AllocationProps> = ({ onSubmit, onSkip }) => {
         return;
       }
 
-      try {
-        setLoading(true);
-        const response = await apiService.getChapters(selectedSubjectId);
-        const chapterTitles = response.map((ch: any) => ch.title);
-        setChapters(chapterTitles);
-        console.log('Fetched chapters for subject:', chapterTitles);
-      } catch (error) {
-        console.error('Error fetching chapters:', error);
-        // Fallback to hardcoded chapters
-        setChapters(["Chapter 1", "Chapter 2", "Chapter 3"]);
-      } finally {
-        setLoading(false);
+      // Find chapters from local subject list based on selectedSubjectId
+      const subj = subjects.find((s) => s._id === selectedSubjectId);
+      if (subj && subj.chapters) {
+        setChapters(subj.chapters.map((c: any) => c.title));
+      } else {
+        setChapters([]);
       }
     };
 
     fetchChapters();
-  }, [selectedSubjectId]);
+  }, [selectedSubjectId, subjects]);
 
   // Load saved data on component mount
   useEffect(() => {

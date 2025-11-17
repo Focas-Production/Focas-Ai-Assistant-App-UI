@@ -6,6 +6,7 @@ interface User {
   name: string;
   phone: string;
   role: string;
+  level?: string;
 }
 
 interface AuthContextType {

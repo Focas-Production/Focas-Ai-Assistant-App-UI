@@ -211,14 +211,32 @@ interface UserInfo {
   name: string;
 }
 
+interface SprintTimerState {
+  isRunning?: boolean;
+  startTime?: string | Date;
+  duration?: number;
+  elapsedSeconds?: number;
+}
+
+interface ActiveSprint {
+  topic?: string;
+  status?: string;
+  timer?: SprintTimerState;
+  sessionId?: {
+    subject?: string;
+    chapter?: string;
+    session?: string;
+    room?: string;
+  };
+}
+
 const StudentDashboard: React.FC = () => {
   const [allocationData, setAllocationData] = useState<AllocationData | null>(null);
+  const [activeSprint, setActiveSprint] = useState<ActiveSprint | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [timerDisplay, setTimerDisplay] = useState('00:00');
+  const [timerEnded, setTimerEnded] = useState(false);
   
-  // Note: Your timer logic is separate. For a full integration, 
-  // the timer's state should also be part of the session data from the backend.
-  const [currentTimer, setCurrentTimer] = useState<{ time: number; isRunning: boolean }>({ time: 0, isRunning: false });
-
   useEffect(() => {
     const userInfoString = localStorage.getItem('userInfo');
     if (!userInfoString) {
@@ -227,25 +245,30 @@ const StudentDashboard: React.FC = () => {
     }
     const user: UserInfo = JSON.parse(userInfoString);
 
-    const fetchActiveSession = async () => {
+    const fetchActiveData = async () => {
       if (!user?.id) {
         setIsLoading(false);
         return;
       }
       try {
         setIsLoading(true);
-        // This is the key API call for the dashboard
         const activeSession = await apiService.getActiveSessionByStudent(user.id);
-       setAllocationData(activeSession);
+        const sprintResponse = await apiService.getActiveSprintForStudent(user.id);
+        setAllocationData(activeSession);
+        setActiveSprint((sprintResponse || null) as ActiveSprint | null);
       } catch (error) {
         console.error("Failed to fetch active session:", error);
         setAllocationData(null);
+        setActiveSprint(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchActiveSession();
+    fetchActiveData();
+    // Poll every 5 seconds to reflect tutor updates in near real-time
+    const interval = setInterval(fetchActiveData, 5000);
+    return () => clearInterval(interval);
   }, []); // Runs once on component mount
 
   const getStatusColor = (status: string = "Pending") => {
@@ -257,11 +280,58 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  useEffect(() => {
+    const updateTimer = () => {
+      const timer = activeSprint?.timer;
+      if (!timer) {
+        setTimerDisplay('00:00');
+        setTimerEnded(false);
+        return;
+      }
+
+      let totalSeconds = timer.elapsedSeconds || 0;
+      if (timer.isRunning && timer.startTime) {
+        const startMs = new Date(timer.startTime).getTime();
+        totalSeconds += Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      }
+
+      let reachedMax = false;
+      if (timer.duration) {
+        const maxSeconds = timer.duration * 60;
+        if (totalSeconds >= maxSeconds) {
+          totalSeconds = maxSeconds;
+          reachedMax = true;
+        }
+      }
+
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      setTimerDisplay(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+      setTimerEnded(reachedMax);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [activeSprint]);
+
+  const subjectToShow = allocationData?.subject || activeSprint?.sessionId?.subject || 'N/A';
+  const chapterToShow = allocationData?.chapter || activeSprint?.sessionId?.chapter || 'N/A';
+  const sprintTopic = activeSprint?.topic;
+  const sessionTopic = allocationData?.topic;
+  const topicToShow =
+    sprintTopic && sprintTopic !== 'N/A'
+      ? sprintTopic
+      : sessionTopic && sessionTopic !== 'N/A'
+        ? sessionTopic
+        : 'Pending';
+  const sprintStatus = activeSprint?.status;
+  const sessionStatus = allocationData?.status;
+  const statusToShow = sprintStatus || sessionStatus || 'Pending';
+  const hasSessionData = allocationData || activeSprint;
+  const showTimer = !!activeSprint?.timer && (activeSprint.timer.isRunning || (activeSprint.timer.elapsedSeconds ?? 0) > 0);
+  const timerFormatted = activeSprint?.timer?.duration
+    ? `${timerDisplay} / ${activeSprint.timer.duration} min${activeSprint.timer.duration > 1 ? 's' : ''}`
+    : timerDisplay;
 
   if (isLoading) {
     return <div className="p-8 text-center">Loading Dashboard...</div>;
@@ -269,13 +339,27 @@ const StudentDashboard: React.FC = () => {
 
   return (
     <div className="p-8 font-inter">
-      {/* Timer Display */}
-      {currentTimer.isRunning && (
-        <div className="mb-6 bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
-          {/* Timer JSX remains the same */}
+      {showTimer && (
+        <div className="mb-5 ">
+          <div className="text-start">
+            {/* <h3 className="text-lg font-semibold text-blue-700 mb-2">Session Timer</h3> */}
+            <div className="text-2xl font-mono font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-xl border-2 border-blue-200 inline-block">
+              {timerFormatted}
+            </div>
+            {/* {activeSprint?.timer?.duration && (
+              <p className="mt-2 text-sm text-gray-500">
+                Total duration: {activeSprint.timer.duration} min{activeSprint.timer.duration > 1 ? 's' : ''}
+              </p>
+            )} */}
+            {timerEnded && (
+              <p className="mt-2 text-base font-semibold text-green-600">
+                Time is up — you can now start the test.
+              </p>
+            )}
+          </div>
         </div>
       )}
-      {allocationData ? (
+      {hasSessionData ? (
         <div className="bg-white/100 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -289,12 +373,12 @@ const StudentDashboard: React.FC = () => {
               </thead>
               <tbody>
                 <tr>
-                  <td className="py-4 px-4 text-gray-800 font-medium">{allocationData.subject}</td>
-                  <td className="py-4 px-4 text-gray-700">{allocationData.chapter}</td>
-                  <td className="py-4 px-4 text-gray-700">{allocationData.topic || "Pending"}</td>
+                  <td className="py-4 px-4 text-gray-800 font-medium">{subjectToShow}</td>
+                  <td className="py-4 px-4 text-gray-700">{chapterToShow}</td>
+                  <td className="py-4 px-4 text-gray-700">{topicToShow}</td>
                   <td className="py-4 px-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(allocationData.status)}`}>
-                      {allocationData.status || "Pending"}
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(statusToShow)}`}>
+                      {statusToShow}
                     </span>
                   </td>
                 </tr>

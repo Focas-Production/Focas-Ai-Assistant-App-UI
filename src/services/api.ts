@@ -129,12 +129,12 @@ async simpleLogin(name: string, phoneNumber: string, password: string) {
   }
 
   // User management methods
-  async createUser(userData: { name: string; phone: string; role: string }) {
+  async createUser(userData: { name: string; email: string, phone: string; role: string; level?: string; website_link: string }) {
     return this.request<{
       message: string;
       userId: string;
       password: string;
-      user: { id: string; name: string; phone: string; role: string };
+      user: { id: string; name: string; phone: string; role: string; level?: string };
     }>('/users', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -295,6 +295,10 @@ async getSessionById(id: string): Promise<SessionData> {
    async getActiveSprintsForTutor(tutorId: string) {
     // This calls your new sprint controller
     return this.request<any[]>(`/sprints/active/tutor/${tutorId}`);
+  }
+
+  async getActiveSprintForStudent(studentId: string) {
+    return this.request(`/sprints/student/${studentId}`);
   }
 
   async updateSprint(sprintId: string, sprintData: any) {

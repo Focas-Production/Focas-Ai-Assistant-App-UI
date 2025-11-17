@@ -293,6 +293,8 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
   
   // State for the editable name in the profile popup
   const [editableName, setEditableName] = useState(user?.name || '');
+  // State for the editable phone number in the profile popup
+  const [editablePhone, setEditablePhone] = useState(user?.phone || '');
   
   // States for the password change form
   const [currentPassword, setCurrentPassword] = useState('');
@@ -303,9 +305,10 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // When the user object changes, update the editable name
+  // When the user object changes, update the editable name and phone
   useEffect(() => {
     setEditableName(user?.name || '');
+    setEditablePhone(user?.phone || '');
   }, [user]);
 
   const handleBackClick = () => {
@@ -316,8 +319,9 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
     // Reset any previous messages when opening the popup
     setError('');
     setSuccess('');
-    // Ensure the name field is up-to-date
+    // Ensure the name and phone fields are up-to-date
     setEditableName(user?.name || '');
+    setEditablePhone(user?.phone || '');
     setShowProfilePopup(true);
   };
 
@@ -340,16 +344,32 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
       return;
     }
     
+    if (editablePhone && editablePhone.length !== 10) {
+      setError("Phone number must be exactly 10 digits.");
+      return;
+    }
+    
     try {
       setError('');
       setSuccess('');
-      // Call the API to update the user's name
-      const updatedUserResponse = await apiService.editUser(user.id, { name: editableName });
+      // Call the API to update the user's name and phone
+      const updatedUserResponse = await apiService.editUser(user.id, { 
+        name: editableName,
+        phone: editablePhone 
+      });
       
       // Update the user state and localStorage with the new info
-      const newUserInfo = { ...user, name: updatedUserResponse.name };
+      const newUserInfo = { 
+        ...user, 
+        name: updatedUserResponse.name || editableName,
+        phone: updatedUserResponse.phone || editablePhone
+      };
       setUser(newUserInfo);
       localStorage.setItem('userInfo', JSON.stringify(newUserInfo));
+      
+      // Explicitly update editableName and editablePhone to ensure they display correctly
+      setEditableName(updatedUserResponse.name || editableName);
+      setEditablePhone(updatedUserResponse.phone || editablePhone);
       
       setSuccess("Profile updated successfully!");
       // Close the popup after a short delay to show the success message
@@ -357,6 +377,17 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
       
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile.");
+    }
+  };
+
+  // Handle phone number input - only allow digits and limit to 10
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Remove any non-digit characters
+    const digitsOnly = value.replace(/\D/g, '');
+    // Limit to 10 digits
+    if (digitsOnly.length <= 10) {
+      setEditablePhone(digitsOnly);
     }
   };
 
@@ -409,9 +440,26 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
 
       {/* Profile Popup */}
       {showProfilePopup && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setShowProfilePopup(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowProfilePopup(false)} className="absolute top-4 right-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">×</button>
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" 
+          onClick={(e) => {
+            // Only close if clicking directly on the backdrop, not on child elements
+            if (e.target === e.currentTarget) {
+              setShowProfilePopup(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative" 
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setShowProfilePopup(false)} 
+              className="absolute top-4 right-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+            >
+              ×
+            </button>
             <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">Profile</h2>
             
             {error && <div className="p-3 mb-4 bg-red-100 text-red-700 rounded-lg">{error}</div>}
@@ -423,18 +471,28 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
                 <input
                   type="text"
                   value={editableName}
-                  onChange={(e) => setEditableName(e.target.value)} // Allow editing
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+                  onChange={(e) => setEditableName(e.target.value)}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 bg-white"
+                  placeholder="Enter your name"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                 <input
-                  type="text"
-                  value={user?.phone || ''}
-                  disabled // Phone number is typically not editable
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50"
+                  type="tel"
+                  value={editablePhone}
+                  onChange={handlePhoneChange}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 bg-white"
+                  placeholder="Enter 10-digit phone number"
+                  maxLength={10}
                 />
+                {editablePhone && editablePhone.length !== 10 && (
+                  <p className="text-xs text-red-600 mt-1">Phone number must be exactly 10 digits</p>
+                )}
               </div>
             </div>
 
