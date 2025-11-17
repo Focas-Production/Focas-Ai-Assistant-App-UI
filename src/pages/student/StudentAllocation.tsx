@@ -361,9 +361,10 @@ const handleSubmit = async (e: React.FormEvent) => {
     // and refresh its data from the API.
     onSubmit?.({ subject, chapter, session, room });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating session:', error);
-    // You might want to show an error message to the user here
+    const errorMessage = error?.message || "Error: Could not create session. Please try again.";
+    alert(errorMessage);
   } finally {
     setLoading(false);
   }

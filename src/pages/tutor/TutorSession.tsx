@@ -772,9 +772,10 @@ const TutorSessions: React.FC = () => {
       setSessions(prev => [newSession, ...prev]);
       setShowAddModal(false);
       setForm({ session: '', room: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create session:", error);
-      alert("Error: Could not create session.");
+      const errorMessage = error?.message || "Error: Could not create session.";
+      alert(errorMessage);
     }
   };
 
@@ -790,9 +791,10 @@ const TutorSessions: React.FC = () => {
         setShowEditModal(false);
         setEditingSession(null);
         setForm({ session: '', room: '' });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to update session:", error);
-        alert("Error: Could not update session.");
+        const errorMessage = error?.message || "Error: Could not update session.";
+        alert(errorMessage);
     }
   };
 
