@@ -1150,7 +1150,9 @@ interface SessionData {
   date: string;
   session: string;
   room: string;
-  messages: ChatMessage[]; 
+  messages: ChatMessage[];
+  studentId?: string | { _id: string } | any; // Can be string, populated object, or ObjectId
+  student_id?: string; // Legacy field
 }
 
 interface StudentReportProps {
@@ -1164,6 +1166,9 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [allChatHistories, setAllChatHistories] = useState<any[]>([]); // All chat histories for the student
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [studentId, setStudentId] = useState<string | null>(null); // Store studentId for fetching all histories
 
   // UI State from original component
   const [activeTab, setActiveTab] = useState<'report' | 'history'>('report');
@@ -1184,16 +1189,37 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       console.log(`STEP 1: Attempting to fetch data for sessionId: ${sessionId}`);
 
       try {
+        // Fetch session data first to get the studentId from the session
         const sessionData = await apiService.getSessionById(sessionId);
         
         console.log("STEP 2: Raw data received from API:", sessionData);
 
         if (sessionData && sessionData._id) {
-          console.log("STEP 3: Session data looks valid. Setting component state.");
-          setCurrentSession({
-            ...sessionData,
-            messages: sessionData.messages || [],
-          });
+          console.log("STEP 3: Session data looks valid. Fetching chat history from database.");
+          
+          // Get studentId from session data (not from logged-in user, as tutors need to see student's history)
+          // The sessionData should have studentId field
+          const sessionDataWithStudent = sessionData as any; // Type assertion to access studentId
+          const extractedStudentId = sessionDataWithStudent.studentId?._id || sessionDataWithStudent.studentId || sessionDataWithStudent.student_id;
+          setStudentId(extractedStudentId); // Store for fetching all histories
+          
+          // Fetch chat history from database for this specific student and session
+          try {
+            const chatHistory: any = await apiService.getChatHistoryBySession(sessionId, extractedStudentId);
+            console.log("STEP 4: Chat history fetched from database:", chatHistory);
+            
+            setCurrentSession({
+              ...sessionData,
+              messages: (chatHistory?.messages || sessionData.messages || []) as ChatMessage[],
+            });
+          } catch (chatError) {
+            console.warn("Could not fetch chat history from database, using session messages:", chatError);
+            // Fallback to messages from session data if chat history fetch fails
+            setCurrentSession({
+              ...sessionData,
+              messages: sessionData.messages || [],
+            });
+          }
         } else {
           console.error("STEP 3 FAILED: API returned empty or invalid data.");
           setError("Failed to load report because the session data received from the server was empty or invalid.");
@@ -1240,6 +1266,44 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
       localStorage.removeItem('showStudentReportSidebar');
     }
   }, []);
+
+  // Fetch all chat histories for the student when History tab is active
+  useEffect(() => {
+    const fetchAllChatHistories = async () => {
+      if (activeTab !== 'history') return;
+      if (!studentId) return; // Don't fetch if we don't have a studentId
+      
+      try {
+        setIsLoadingHistory(true);
+        console.log('Fetching all chat histories for student:', studentId);
+        
+        const histories = await apiService.getChatHistoriesByStudent(studentId);
+        console.log('All chat histories received:', histories);
+        
+        // Ensure we have an array and filter to only include histories with messages
+        const validHistories = Array.isArray(histories) 
+          ? histories.filter((h: any) => h.messages && h.messages.length > 0)
+          : [];
+        
+        // Sort by date (most recent first)
+        validHistories.sort((a: any, b: any) => {
+          const dateA = new Date(a.date || a.createdAt || 0).getTime();
+          const dateB = new Date(b.date || b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+        
+        setAllChatHistories(validHistories);
+        console.log('Processed chat histories:', validHistories.length);
+      } catch (error) {
+        console.error('Error fetching all chat histories:', error);
+        setAllChatHistories([]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    
+    fetchAllChatHistories();
+  }, [activeTab, studentId]);
 
   const generatePDF = () => {
     if (!currentSession) return;
@@ -1624,73 +1688,105 @@ const StudentReport = ({ showSidebar }: StudentReportProps) => {
                   )}
                 </div>
               ) : (
-                /* History Tab */
+                /* History Tab - Shows ALL chat history across all sessions for this student */
                 <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-xl">
                   <div className="p-6">
-                    <h2 className="text-2xl font-bold text-blue-700 mb-6">Chat History</h2>
+                    <h2 className="text-2xl font-bold text-blue-700 mb-2">Complete Chat History</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                      All conversations for this student across all sessions and time slots
+                    </p>
                     
-                    {currentSession && currentSession.messages.length > 0 ? (
-                      <div className="space-y-6">
-                        <div className="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors duration-200">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-800">
-                                Session: {currentSession.session} | Room: {currentSession.room}
-                              </h3>
-                              <p className="text-sm text-gray-600">Date: {currentSession.date}</p>
-                            </div>
-                            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                              {currentSession.messages.length} messages
-                            </span>
-                          </div>
+                    {isLoadingHistory ? (
+                      <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading chat history...</p>
+                      </div>
+                    ) : allChatHistories.length > 0 ? (
+                      <div className="space-y-6 max-h-[700px] overflow-y-auto pr-4">
+                        {allChatHistories.map((chatHistory, historyIndex) => {
+                          // Combine all messages from this chat history
+                          const allMessages = chatHistory.messages || [];
                           
-                          {/* Full Chat Conversation */}
-                          <div className="space-y-4 max-h-96 overflow-y-auto">
-                            {currentSession.messages.map((message, msgIndex) => (
-                              <div
-                                key={msgIndex}
-                                className={`p-3 rounded-lg ${
-                                  message.role === 'user'
-                                    ? 'bg-blue-100 ml-4'
-                                    : 'bg-gray-100 mr-4'
-                                }`}
-                              >
-                                <div className="flex justify-between items-start mb-1">
-                                  <span className={`font-semibold text-sm ${
-                                    message.role === 'user' ? 'text-blue-700' : 'text-gray-700'
-                                  }`}>
-                                    {message.role === 'user' ? 'Student' : 'AI Assistant'}
-                                  </span>
-                                  <span className="text-xs text-gray-500">{message.timestamp}</span>
+                          if (allMessages.length === 0) return null;
+                          
+                          // Format date for display
+                          const historyDate = chatHistory.date 
+                            ? new Date(chatHistory.date).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : 'Date not available';
+                          
+                          return (
+                            <div key={chatHistory._id || historyIndex} className="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors duration-200">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h3 className="text-lg font-semibold text-gray-800">
+                                    Session: {chatHistory.session || 'N/A'} | Room: {chatHistory.room || 'N/A'}
+                                  </h3>
+                                  <p className="text-sm text-gray-600">
+                                    Date: {historyDate}
+                                  </p>
                                 </div>
-                                <p className="text-gray-800 text-sm whitespace-pre-wrap">{message.content}</p>
-                                {message.role === 'user' && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {(() => {
-                                      // Support legacy messages without inputMode
-                                      const inputMode = message.inputMode;
-                                      let label = 'Text';
-                                      if (inputMode) {
-                                        label = inputMode.charAt(0).toUpperCase() + inputMode.slice(1);
-                                      } else if (message.file) {
-                                        // If file exists, guess type
-                                        label = message.file.type && message.file.type.startsWith('image/') ? 'Image' : 'File';
-                                      }
-                                      return `Input Mode: ${label}`;
-                                    })()}
-                                  </div>
-                                )}
+                                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                  {allMessages.length} messages
+                                </span>
                               </div>
-                            ))}
-                          </div>
-                        </div>
+                              
+                              {/* Messages from this session */}
+                              <div className="space-y-4">
+                                {allMessages.map((message: any, msgIndex: number) => (
+                                  <div
+                                    key={message.id || msgIndex}
+                                    className={`p-3 rounded-lg ${
+                                      message.role === 'user'
+                                        ? 'bg-blue-100 ml-4'
+                                        : 'bg-gray-100 mr-4'
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className={`font-semibold text-sm ${
+                                        message.role === 'user' ? 'text-blue-700' : 'text-gray-700'
+                                      }`}>
+                                        {message.role === 'user' ? 'Student' : 'AI Assistant'}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        {message.timestamp 
+                                          ? (typeof message.timestamp === 'string' 
+                                              ? new Date(message.timestamp).toLocaleString() 
+                                              : message.timestamp)
+                                          : 'N/A'}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-800 text-sm whitespace-pre-wrap">{message.content}</p>
+                                    {message.role === 'user' && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {(() => {
+                                          const inputMode = message.inputMode;
+                                          let label = 'Text';
+                                          if (inputMode) {
+                                            label = inputMode.charAt(0).toUpperCase() + inputMode.slice(1);
+                                          } else if (message.file) {
+                                            label = message.file.type && message.file.type.startsWith('image/') ? 'Image' : 'File';
+                                          }
+                                          return `Input Mode: ${label}`;
+                                        })()}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-12">
                         <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-gray-600 mb-2">No Chat History Available</h3>
                         <p className="text-gray-500">
-                          This session does not have any chat history available. Start a conversation with the AI Assistant to see chat history.
+                          No chat history found for this student. Start a conversation with the AI Assistant to see chat history.
                         </p>
                       </div>
                     )}

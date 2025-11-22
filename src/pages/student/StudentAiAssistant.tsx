@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, Paperclip, Sparkles } from 'lucide-react';
+import { sessionManager } from '../../utils/sessionManager';
+import type { ChatMessage } from '../../utils/sessionManager';
 import { apiService } from '../../services/api';
 
 // ✅ FIXED: More specific types for Speech Recognition
@@ -57,78 +59,53 @@ const StudentAI: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [currentTopic, setCurrentTopic] = useState<string>('');
-  const [dbSessionId, setDbSessionId] = useState<string | null>(null);
-  const [studentId, setStudentId] = useState<string | null>(null);
+  const [databaseSessionId, setDatabaseSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // ✅ FIXED: Specific type for the ref, replacing `any`
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  // Load active session from database and chat history
+  // Load existing chat history for current session and get current topic
   useEffect(() => {
-    const loadSessionAndHistory = async () => {
-      const userInfo = localStorage.getItem('userInfo');
-      if (!userInfo) {
-        console.log('No user info found');
-        return;
+    const currentSession = sessionManager.getCurrentSession();
+    const userInfo = localStorage.getItem('userInfo');
+    
+    if (currentSession && userInfo) {
+      const user = JSON.parse(userInfo);
+      
+      // Get current topic from sprintData
+      const sprintData = JSON.parse(localStorage.getItem('sprintData') || '[]');
+      const currentStudent = (sprintData as Sprint[]).find((sprint) => sprint.name === user.name);
+      
+      if (currentStudent && currentStudent.topic && currentStudent.topic !== 'Topic 1') {
+        setCurrentTopic(currentStudent.topic);
+        console.log('Current topic set to:', currentStudent.topic);
+      } else {
+        setCurrentTopic('');
+        console.log('No specific topic allocated yet');
       }
-
-      try {
-        const user = JSON.parse(userInfo);
-        setStudentId(user.id);
-
-        // Get current topic from sprintData
-        const sprintData = JSON.parse(localStorage.getItem('sprintData') || '[]');
-        const currentStudent = (sprintData as Sprint[]).find((sprint) => sprint.name === user.name);
+      
+      console.log('Loading chat history for session ID:', currentSession.sessionId);
+      
+      // Load session-specific chat history from session manager
+      const evaluation = sessionManager.getEvaluation(currentSession.sessionId);
+      if (evaluation && evaluation.messages) {
+        console.log('Found existing session messages:', evaluation.messages);
         
-        if (currentStudent && currentStudent.topic && currentStudent.topic !== 'Topic 1') {
-          setCurrentTopic(currentStudent.topic);
-          console.log('Current topic set to:', currentStudent.topic);
-        } else {
-          setCurrentTopic('');
-          console.log('No specific topic allocated yet');
-        }
-
-        // Fetch active session from database
-        const activeSession = await apiService.getActiveSessionByStudent(user.id);
-        
-        if (activeSession && activeSession._id) {
-          const sessionId = activeSession._id;
-          setDbSessionId(sessionId);
-          console.log('Active session found:', sessionId);
-
-          // Load chat history from database
-          try {
-            const chatHistory: any = await apiService.getChatHistoryBySession(sessionId);
-            if (chatHistory && Array.isArray(chatHistory.messages) && chatHistory.messages.length > 0) {
-              console.log('Found chat history in database:', chatHistory.messages.length, 'messages');
-              
-              // Convert database messages to Message format
-              const loadedMessages: Message[] = chatHistory.messages.map((msg: any) => ({
-                id: msg.id || Date.now().toString(),
-                sender: msg.role === 'user' ? 'user' : 'ai',
-                text: msg.content,
-                timestamp: new Date(msg.timestamp || Date.now()),
-                file: msg.file
-              }));
-              setMessages(loadedMessages);
-            } else {
-              console.log('No chat history found in database, starting fresh');
-            }
-          } catch (historyError) {
-            console.log('Error loading chat history (this is normal for new sessions):', historyError);
-            // This is expected for new sessions, so we don't show an error
-          }
-        } else {
-          console.log('No active session found in database');
-        }
-      } catch (error) {
-        console.error('Error loading session and history:', error);
+        // Convert saved messages to Message format
+        const loadedMessages: Message[] = evaluation.messages.map((msg: ChatMessage) => ({
+          id: msg.id || Date.now().toString(),
+          sender: msg.role === 'user' ? 'user' : 'ai',
+          text: msg.content,
+          timestamp: new Date(msg.timestamp),
+          file: msg.file
+        }));
+        setMessages(loadedMessages);
+      } else {
+        console.log('No existing session messages found, starting fresh');
       }
-    };
-
-    loadSessionAndHistory();
+    }
   }, []);
 
   // Monitor for topic changes
@@ -158,74 +135,38 @@ const StudentAI: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentTopic]);
 
-  // Save chat history to database whenever messages change
-  const saveChatHistoryToDB = async (updatedMessages: Message[]) => {
-    if (!dbSessionId || !studentId) {
-      console.log('No active session or student ID, skipping database save');
+  // Save chat history whenever messages change
+  const saveChatHistory = (updatedMessages: Message[]) => {
+    const currentSession = sessionManager.getCurrentSession();
+    if (!currentSession) {
+      console.error('No active session found');
       return;
     }
 
-    try {
-      const userInfo = localStorage.getItem('userInfo');
-      if (!userInfo) return;
-      
-      const user = JSON.parse(userInfo);
-      
-      // Convert messages to database format
-      const dbMessages = updatedMessages.map(msg => ({
-        id: msg.id,
-        role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.text,
-        timestamp: msg.timestamp.toISOString(),
-        file: msg.file ? (typeof msg.file === 'string' ? msg.file : msg.file.name) : null
-      }));
+    // Convert messages to the format expected by session manager
+    const sessionMessages: ChatMessage[] = updatedMessages.map(msg => ({
+      id: msg.id,
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text,
+      timestamp: msg.timestamp.toLocaleString(),
+      file: msg.file
+    }));
 
-      // Get session details for chat history
-      const activeSession = await apiService.getActiveSessionByStudent(studentId);
-      
-      if (activeSession) {
-        // Update or create chat history (backend will create if it doesn't exist)
-        try {
-          await apiService.updateChatHistory(dbSessionId, {
-            messages: dbMessages
-          });
-          console.log('Chat history saved to database');
-        } catch (error) {
-          // If update fails (e.g., session not found), try creating
-          console.log('Update failed, creating new chat history:', error);
-          try {
-            await apiService.createChatHistory({
-              sessionId: dbSessionId,
-              studentId: studentId,
-              studentName: user.name,
-              date: activeSession.date || new Date().toISOString(),
-              session: activeSession.session || '',
-              room: activeSession.room || '',
-              messages: dbMessages
-            });
-            console.log('Chat history created in database');
-          } catch (createError) {
-            console.error('Error creating chat history:', createError);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error saving chat history to database:', error);
-      // Don't throw error, just log it - we still want the UI to work
-    }
+    // Always get the latest evaluation (score/feedback if any)
+    const existingEvaluation = sessionManager.getEvaluation(currentSession.sessionId);
+    sessionManager.saveEvaluation({
+      score: existingEvaluation ? existingEvaluation.score : 0,
+      feedback: existingEvaluation ? existingEvaluation.feedback : 'Session in progress',
+      messages: sessionMessages
+    });
   };
 
-  // Save messages to database whenever they change (with debouncing)
+  // Save messages whenever they change
   useEffect(() => {
-    if (messages.length > 0 && dbSessionId) {
-      // Debounce the save to avoid too many API calls
-      const timeoutId = setTimeout(() => {
-        saveChatHistoryToDB(messages);
-      }, 1000); // Wait 1 second after last message change
-
-      return () => clearTimeout(timeoutId);
+    if (messages.length > 0) {
+      saveChatHistory(messages);
     }
-  }, [messages, dbSessionId]);
+  }, [messages]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -246,16 +187,7 @@ const StudentAI: React.FC = () => {
           timestamp: new Date(),
           inputMode: 'voice'
         };
-        setMessages(prev => {
-          const updated = [...prev, voiceMessage];
-          // Save voice message to database
-          if (dbSessionId && studentId) {
-            saveChatHistoryToDB(updated).catch(err => 
-              console.error('Error saving voice message:', err)
-            );
-          }
-          return updated;
-        });
+        setMessages(prev => [...prev, voiceMessage]);
         setIsRecording(false);
       };
 
@@ -293,6 +225,34 @@ const StudentAI: React.FC = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    // Get user info
+    const userInfo = localStorage.getItem('userInfo');
+    if (!userInfo) {
+      console.error('No user info found');
+      return;
+    }
+
+    const user = JSON.parse(userInfo);
+    const studentId = user.id;
+    
+    // Use database session ID if available, otherwise try to get it
+    let sessionId = databaseSessionId;
+    if (!sessionId) {
+      try {
+        const activeSession = await apiService.getActiveSessionByStudent(studentId);
+        if (activeSession && activeSession._id) {
+          sessionId = activeSession._id;
+          setDatabaseSessionId(sessionId);
+        } else {
+          console.error('No active session found in database');
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching active session:', error);
+        return;
+      }
+    }
+
     const newMessage: Message = {
       id: Date.now().toString(),
       sender: 'user',
@@ -301,19 +261,25 @@ const StudentAI: React.FC = () => {
       inputMode: 'text'
     };
 
-      const updatedMessages = [...messages, newMessage];
-      setMessages(updatedMessages);
-      setInput('');
-      setIsLoading(true);
+    setMessages(prev => [...prev, newMessage]);
+    setInput('');
+    setIsLoading(true);
 
-      // Save user message immediately to database
-      if (dbSessionId && studentId) {
-        saveChatHistoryToDB(updatedMessages).catch(err => 
-          console.error('Error saving user message:', err)
-        );
+    try {
+      // Save user message to database
+      try {
+        await apiService.addMessage(sessionId, {
+          id: newMessage.id,
+          role: 'user',
+          content: newMessage.text,
+          timestamp: newMessage.timestamp.toISOString(),
+          studentId: studentId
+        });
+      } catch (dbError) {
+        console.error('Error saving user message to database:', dbError);
+        // Continue even if database save fails
       }
 
-      try {
       const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001';
       const response = await fetch(`${backendUrl}/api/rag/query`, {
         method: 'POST',
@@ -340,29 +306,43 @@ const StudentAI: React.FC = () => {
         timestamp: new Date()
       };
       
-      const finalMessages = [...messages, newMessage, aiResponse];
-      setMessages(finalMessages);
+      setMessages(prev => [...prev, aiResponse]);
 
-      // Save complete conversation to database
-      if (dbSessionId && studentId) {
-        saveChatHistoryToDB(finalMessages).catch(err => 
-          console.error('Error saving AI response:', err)
-        );
+      // Save AI response to database
+      try {
+        await apiService.addMessage(sessionId, {
+          id: aiResponse.id,
+          role: 'assistant',
+          content: aiResponse.text,
+          timestamp: aiResponse.timestamp.toISOString(),
+          studentId: studentId
+        });
+      } catch (dbError) {
+        console.error('Error saving AI message to database:', dbError);
+        // Continue even if database save fails
       }
 
       const scoreMatch = aiResponseText.match(/📊 Score:\s*(\d+)\/10/);
-      if (scoreMatch && dbSessionId) {
-        const score = parseInt(scoreMatch[1]);
-        try {
-          // Update chat history with score
-          await apiService.updateChatHistory(dbSessionId, {
-            score: score,
-            feedback: 'Evaluation complete'
+      if (scoreMatch) {
+        const score = scoreMatch[1];
+        const allMessages: Message[] = [...messages, newMessage, aiResponse];
+        const sessionMessages: ChatMessage[] = allMessages.map(msg => ({
+          id: msg.id,
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text,
+          timestamp: msg.timestamp.toLocaleString(),
+          file: msg.file
+        }));
+        // Save to session manager for backward compatibility
+        const currentSession = sessionManager.getCurrentSession();
+        if (currentSession) {
+          sessionManager.saveEvaluation({
+            score: parseInt(score),
+            feedback: 'Evaluation complete',
+            messages: sessionMessages
           });
-          console.log('Score saved to database for session ID:', dbSessionId);
-        } catch (error) {
-          console.error('Error saving score to database:', error);
         }
+        console.log('Score saved for session ID:', sessionId);
       }
     } catch (error) {
       console.error('Error calling backend:', error);
@@ -401,16 +381,8 @@ const StudentAI: React.FC = () => {
       inputMode: file.type.startsWith('image/') ? 'image' : 'file'
     };
     
-    const updatedMessages = [...messages, fileMessage];
-    setMessages(updatedMessages);
+    setMessages(prev => [...prev, fileMessage]);
     setIsLoading(true);
-
-    // Save file message immediately to database
-    if (dbSessionId && studentId) {
-      saveChatHistoryToDB(updatedMessages).catch(err => 
-        console.error('Error saving file message:', err)
-      );
-    }
 
     try {
       const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001';
@@ -479,28 +451,27 @@ const StudentAI: React.FC = () => {
         timestamp: new Date()
       };
       
-      const finalMessages = [...messages, fileMessage, aiResponse];
-      setMessages(finalMessages);
-
-      // Save complete conversation to database
-      if (dbSessionId && studentId) {
-        saveChatHistoryToDB(finalMessages).catch(err => 
-          console.error('Error saving file AI response:', err)
-        );
-      }
+      setMessages(prev => [...prev, aiResponse]);
 
       const scoreMatch = aiResponseText.match(/📊 Score:\s*(\d+)\/10/);
-      if (scoreMatch && dbSessionId) {
-        const score = parseInt(scoreMatch[1]);
-        try {
-          // Update chat history with score
-          await apiService.updateChatHistory(dbSessionId, {
-            score: score,
-            feedback: 'Evaluation complete'
+      if (scoreMatch) {
+        const score = scoreMatch[1];
+        const currentSession = sessionManager.getCurrentSession();
+        if (currentSession) {
+          const allMessages: Message[] = [...messages, fileMessage, aiResponse];
+          const sessionMessages: ChatMessage[] = allMessages.map(msg => ({
+            id: msg.id,
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text,
+            timestamp: msg.timestamp.toLocaleString(),
+            file: msg.file
+          }));
+          sessionManager.saveEvaluation({
+            score: parseInt(score),
+            feedback: 'Evaluation complete',
+            messages: sessionMessages
           });
-          console.log('Score saved to database for session ID:', dbSessionId);
-        } catch (error) {
-          console.error('Error saving score to database:', error);
+          console.log('Score saved for session ID:', currentSession.sessionId);
         }
       }
     } catch (error) {

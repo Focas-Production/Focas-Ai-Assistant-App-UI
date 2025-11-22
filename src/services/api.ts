@@ -345,6 +345,7 @@ async getSessionById(id: string): Promise<SessionData> {
     content: string;
     timestamp?: string;
     file?: string;
+    studentId?: string;
   }) {
     return this.request(`/chat-history/${sessionId}/message`, {
       method: 'POST',
@@ -352,8 +353,11 @@ async getSessionById(id: string): Promise<SessionData> {
     });
   }
 
-  async getChatHistoryBySession(sessionId: string) {
-    return this.request(`/chat-history/session/${sessionId}`);
+  async getChatHistoryBySession(sessionId: string, studentId?: string) {
+    const url = studentId 
+      ? `/chat-history/session/${sessionId}?studentId=${studentId}`
+      : `/chat-history/session/${sessionId}`;
+    return this.request(url);
   }
 
   async getChatHistoriesByStudent(studentId: string) {
